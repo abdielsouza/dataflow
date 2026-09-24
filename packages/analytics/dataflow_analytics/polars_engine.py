@@ -7,7 +7,7 @@ class PolarsEngine:
         if (isinstance(operation, GroupByOperation)):
             return self._execute_group_by(dataframe, operation)
         else:
-            raise ValueError
+            raise ValueError(f"Unsupported operation: {operation.type}")
 
     def _execute_group_by(self, dataframe: pl.DataFrame, operation: GroupByOperation) -> Artifact:
         aggregations = []
