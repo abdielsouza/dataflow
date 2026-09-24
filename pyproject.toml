@@ -1,0 +1,43 @@
+[project]
+name = "dataflow"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "polars[rtcompat]>=1.44.2",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.8",
+    "dataflow-analytics",
+    "dataflow-domain",
+    "dataflow-execution",
+]
+
+[tool.uv.workspace]
+members = [
+    # "apps/api",
+    "packages/domain",
+    "packages/analytics",
+    "packages/execution",
+]
+
+[tool.uv.sources]
+dataflow-analytics = { workspace = true }
+dataflow-domain = { workspace = true }
+dataflow-execution = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
