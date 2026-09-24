@@ -7,7 +7,7 @@ from .operation import Operation
 @dataclass
 class Analysis:
     name: str
-    dataset_id: UUID | None
+    dataset_id: UUID
     id: UUID = field(default_factory=uuid4)
     operations: list[Operation] = field(default_factory=list)
 
