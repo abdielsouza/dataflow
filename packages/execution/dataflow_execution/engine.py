@@ -15,12 +15,17 @@ class ExecutionEngine:
 
         current_dataframe = dataframe
 
-        for operation in analysis.operations:
-            artifact = self._analytics_engine.execute(current_dataframe, operation)
+        try:
+            for operation in analysis.operations:
+                artifact = self._analytics_engine.execute(current_dataframe, operation)
 
-            execution.artifacts.append(artifact)
-            current_dataframe = cast(pl.DataFrame, artifact.data)
+                execution.artifacts.append(artifact)
+                current_dataframe = cast(pl.DataFrame, artifact.data)
 
-        execution.status = ExecutionStatus.COMPLETED
+            execution.status = ExecutionStatus.COMPLETED
+
+        except Exception as err:
+            execution.status = ExecutionStatus.FAILED
+            execution.error = str(err)
 
         return execution
