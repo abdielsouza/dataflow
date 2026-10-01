@@ -5,6 +5,7 @@ from typing import Optional
 
 from .artifact import Artifact
 
+
 class ExecutionStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"

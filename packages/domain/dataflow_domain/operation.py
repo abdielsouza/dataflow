@@ -9,5 +9,4 @@ class Operation(ABC):
 
     @property
     @abstractmethod
-    def type(self) -> str:
-        ...
+    def type(self) -> str: ...
