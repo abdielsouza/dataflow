@@ -2,6 +2,7 @@ from .operations import (
     GroupByOperation,
     FilterOperation,
     SortOperation,
+    CreateChartOperation
 )
 from .analysis import Analysis
 from .dataset import Dataset
@@ -12,9 +13,13 @@ from .artifact import Artifact, ArtifactType
 from .chart import ChartSpec, ChartType
 
 __all__ = [
+    # operations
     "GroupByOperation",
     "FilterOperation",
     "SortOperation",
+    "CreateChartOperation",
+
+    # models
     "Analysis",
     "Dataset",
     "Operation",
