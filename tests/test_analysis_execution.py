@@ -10,11 +10,13 @@ def test_analysis_execution() -> None:
         name="Vendas",
         source="memory",
     )
-    
-    dataframe = pl.DataFrame({
-        "estado": ["MG", "MG", "SP"],
-        "faturamento": [100, 200, 500],
-    })
+
+    dataframe = pl.DataFrame(
+        {
+            "estado": ["MG", "MG", "SP"],
+            "faturamento": [100, 200, 500],
+        }
+    )
 
     analysis = Analysis(
         name="Faturamento por estado",
@@ -26,7 +28,7 @@ def test_analysis_execution() -> None:
             columns=("estado",),
             aggregations={
                 "faturamento": "sum",
-            }
+            },
         )
     )
 

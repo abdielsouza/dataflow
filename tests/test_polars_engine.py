@@ -4,17 +4,20 @@ from typing import cast
 from dataflow_analytics import PolarsEngine
 from dataflow_domain import GroupByOperation
 
+
 def test_group_by_sum() -> None:
-    dataframe = pl.DataFrame({
-        "estado": ["MG", "MG", "SP"],
-        "faturamento": [100, 200, 500],
-    })
+    dataframe = pl.DataFrame(
+        {
+            "estado": ["MG", "MG", "SP"],
+            "faturamento": [100, 200, 500],
+        }
+    )
 
     operation = GroupByOperation(
         columns=("estado",),
         aggregations={
             "faturamento": "sum",
-        }
+        },
     )
 
     artifact = PolarsEngine().execute(dataframe, operation)
