@@ -12,6 +12,7 @@ members = [
     "dataflow-analytics",
     "dataflow-domain",
     "dataflow-execution",
+    "dataflow-storage",
 ]
 
 [[package]]
@@ -181,6 +182,7 @@ dev = [
     { name = "dataflow-analytics" },
     { name = "dataflow-domain" },
     { name = "dataflow-execution" },
+    { name = "dataflow-storage" },
     { name = "mypy" },
     { name = "polars", extra = ["rtcompat"] },
     { name = "pytest" },
@@ -195,6 +197,7 @@ dev = [
     { name = "dataflow-analytics", editable = "packages/analytics" },
     { name = "dataflow-domain", editable = "packages/domain" },
     { name = "dataflow-execution", editable = "packages/execution" },
+    { name = "dataflow-storage", editable = "packages/storage" },
     { name = "mypy", specifier = ">=2.3.1" },
     { name = "polars", extras = ["rtcompat"], specifier = ">=1.44.2" },
     { name = "pytest", specifier = ">=9.1.1" },
@@ -235,6 +238,21 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "dataflow-analytics", editable = "packages/analytics" },
+    { name = "dataflow-domain", editable = "packages/domain" },
+    { name = "polars", extras = ["rtcompat"], specifier = ">=1.33" },
+]
+
+[[package]]
+name = "dataflow-storage"
+version = "0.1.0"
+source = { editable = "packages/storage" }
+dependencies = [
+    { name = "dataflow-domain" },
+    { name = "polars", extra = ["rtcompat"] },
+]
+
+[package.metadata]
+requires-dist = [
     { name = "dataflow-domain", editable = "packages/domain" },
     { name = "polars", extras = ["rtcompat"], specifier = ">=1.33" },
 ]

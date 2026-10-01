@@ -16,6 +16,7 @@ dev = [
     "dataflow-analytics",
     "dataflow-domain",
     "dataflow-execution",
+    "dataflow-storage",
 ]
 
 [tool.uv.workspace]
@@ -24,12 +25,14 @@ members = [
     "packages/domain",
     "packages/analytics",
     "packages/execution",
+    "packages/storage",
 ]
 
 [tool.uv.sources]
 dataflow-analytics = { workspace = true }
 dataflow-domain = { workspace = true }
 dataflow-execution = { workspace = true }
+dataflow-storage = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
