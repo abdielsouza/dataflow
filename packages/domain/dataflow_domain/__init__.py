@@ -8,7 +8,8 @@ from .dataset import Dataset
 from .operation import Operation
 from .execution import ExecutionStatus, Execution
 from .project import Project
-from .artifact import Artifact
+from .artifact import Artifact, ArtifactType
+from .chart import ChartSpec, ChartType
 
 __all__ = [
     "GroupByOperation",
@@ -21,4 +22,7 @@ __all__ = [
     "Execution",
     "Project",
     "Artifact",
+    "ArtifactType",
+    "ChartSpec",
+    "ChartType",
 ]
