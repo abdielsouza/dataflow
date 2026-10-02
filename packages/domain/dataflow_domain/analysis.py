@@ -2,12 +2,13 @@ from dataclasses import dataclass, field
 from uuid import UUID, uuid4
 
 from .operation import Operation
+from .dataset import Dataset
 
 
 @dataclass
 class Analysis:
     name: str
-    dataset_id: UUID
+    dataset: Dataset
     id: UUID = field(default_factory=uuid4)
     operations: list[Operation] = field(default_factory=list)
 
