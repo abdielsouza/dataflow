@@ -6,6 +6,7 @@ from .models import (
     RenderedArtifactType,
     RendererType,
 )
+from .serializers import RenderedArtifactSerializer
 
 __all__ = [
     "PolarsEngine",
@@ -14,4 +15,5 @@ __all__ = [
     "RenderedArtifact",
     "RenderedArtifactType",
     "RendererType",
+    "RenderedArtifactSerializer",
 ]

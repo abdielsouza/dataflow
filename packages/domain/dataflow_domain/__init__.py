@@ -11,6 +11,7 @@ from .execution import ExecutionStatus, Execution
 from .project import Project
 from .artifact import Artifact, ArtifactType
 from .chart import ChartSpec, ChartType
+from .graph import OperationNode, OperationEdge, OperationGraph
 
 __all__ = [
     # operations
@@ -30,4 +31,7 @@ __all__ = [
     "ArtifactType",
     "ChartSpec",
     "ChartType",
+    "OperationNode",
+    "OperationEdge",
+    "OperationGraph",
 ]

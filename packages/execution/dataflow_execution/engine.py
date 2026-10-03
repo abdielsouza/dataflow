@@ -37,17 +37,17 @@ class ExecutionEngine:
                 data=dataframe,
             )
 
-            for operation in analysis.operations:
-                if isinstance(operation, CreateChartOperation):
+            for node in analysis.graph.nodes:
+                if isinstance(node.operation, CreateChartOperation):
                     current_artifact = self._chart_engine.create(
-                        operation.chart,
+                        node.operation.chart,
                         current_artifact.data,
                     )
                 else:
                     current_artifact = (
                         self._analytics_engine.execute(
                             current_artifact,
-                            operation,
+                            node.operation,
                         )
                     )
 
