@@ -1,5 +1,13 @@
+# Python
 .venv/
 *.egg-info
 .ruff_cache
 .pytest_cache
 __pycache__
+
+# Generated files in tests
+*.csv
+
+# VSCode
+.vscode/
+.coverage

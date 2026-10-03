@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "dataflow-domain",
     "polars[rtcompat]>=1.33",
+    "plotly>=6.0",
 ]
 
 [tool.uv.sources]

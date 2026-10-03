@@ -1,44 +1,74 @@
-import polars as pl
-from typing import cast
+from pathlib import Path
 
-from dataflow_domain import Analysis, ExecutionStatus, GroupByOperation, Dataset
+from dataflow_domain import (
+    Analysis,
+    ArtifactType,
+    ChartSpec,
+    ChartType,
+    CreateChartOperation,
+    Dataset,
+    ExecutionStatus,
+    FilterOperation,
+    GroupByOperation
+)
 from dataflow_execution import ExecutionEngine
 
 
-def test_analysis_execution() -> None:
-    dataset = Dataset(
-        name="Vendas",
-        source="memory",
+def test_complete_analysis_pipeline(tmp_path: Path = Path(".")) -> None:
+    dataset_path = tmp_path / "vendas.csv"
+
+    dataset_path.write_text(
+        "estado,vendas\n"
+        "MG,100\n"
+        "MG,200\n"
+        "SP,500\n"
+        "RJ,50\n"
     )
 
-    dataframe = pl.DataFrame(
-        {
-            "estado": ["MG", "MG", "SP"],
-            "faturamento": [100, 200, 500],
-        }
-    )
+    dataset = Dataset(name="Vendas", source=str(dataset_path.resolve()))
+    analysis = Analysis(name="Análise de Vendas", dataset=dataset)
 
-    analysis = Analysis(
-        name="Faturamento por estado",
-        dataset_id=dataset.id,
+    analysis.add_operation(
+        FilterOperation(
+            column="vendas",
+            operator=">",
+            value=50,
+        )
     )
 
     analysis.add_operation(
         GroupByOperation(
             columns=("estado",),
             aggregations={
-                "faturamento": "sum",
+                "vendas": "sum",
             },
         )
     )
 
-    execution = ExecutionEngine().run(analysis, dataframe)
+    analysis.add_operation(
+        CreateChartOperation(
+            chart=ChartSpec(
+                type=ChartType.BAR,
+                x="estado",
+                y="vendas",
+                title="Vendas por estado",
+            ),
+        )
+    )
+
+    execution = ExecutionEngine().run(analysis)
+
+    print(execution.error)
 
     assert execution.status == ExecutionStatus.COMPLETED
     assert execution.error is None
-    assert len(execution.artifacts) == 1
 
-    result = cast(pl.DataFrame, execution.artifacts[0].data).sort("estado")
+    assert len(execution.artifacts) == 3
 
-    assert result["estado"].to_list() == ["MG", "SP"]
-    assert result["faturamento"].to_list() == [300, 500]
+    filter_result = execution.artifacts[0]
+    group_result = execution.artifacts[1]
+    chart_result = execution.artifacts[2]
+
+    assert filter_result.type == ArtifactType.TABLE
+    assert group_result.type == ArtifactType.TABLE
+    assert chart_result.type == ArtifactType.CHART

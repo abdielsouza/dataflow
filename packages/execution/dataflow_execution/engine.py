@@ -1,13 +1,14 @@
 import polars as pl
 from typing import cast, Optional
 
-from dataflow_analytics import PolarsEngine
+from dataflow_analytics import PolarsEngine, ChartEngine
 from dataflow_domain import (
     Analysis,
     Execution,
     ExecutionStatus,
     Artifact,
     ArtifactType,
+    CreateChartOperation,
 )
 from dataflow_storage import DatasetLoader
 
@@ -17,9 +18,11 @@ class ExecutionEngine:
         self,
         dataset_loader: Optional[DatasetLoader] = None,
         analytics_engine: Optional[PolarsEngine] = None,
+        chart_engine: Optional[ChartEngine] = None,
     ) -> None:
         self._dataset_loader = dataset_loader or DatasetLoader()
         self._analytics_engine = analytics_engine or PolarsEngine()
+        self._chart_engine = chart_engine or ChartEngine()
 
     def run(self, analysis: Analysis) -> Execution:
         execution = Execution(
@@ -35,12 +38,18 @@ class ExecutionEngine:
             )
 
             for operation in analysis.operations:
-                current_artifact = (
-                    self._analytics_engine.execute(
-                        current_artifact,
-                        operation,
+                if isinstance(operation, CreateChartOperation):
+                    current_artifact = self._chart_engine.create(
+                        operation.chart,
+                        current_artifact.data,
                     )
-                )
+                else:
+                    current_artifact = (
+                        self._analytics_engine.execute(
+                            current_artifact,
+                            operation,
+                        )
+                    )
 
                 execution.artifacts.append(current_artifact)
 
