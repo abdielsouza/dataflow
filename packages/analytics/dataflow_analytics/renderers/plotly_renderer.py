@@ -33,6 +33,27 @@ class PlotlyRenderer:
                     ],
                 )
 
+            case ChartType.LINE:
+                figure = go.Figure(
+                    data=[
+                        go.Scatter(
+                            x=dataframe[spec.x].to_list(),
+                            y=dataframe[spec.y].to_list(),
+                            mode="lines",
+                        ),
+                    ],
+                )
+
+            case ChartType.HIST:
+                figure = go.Figure(
+                    data=[
+                        go.Histogram(
+                            x=dataframe[spec.x].to_list(),
+                            y=dataframe[spec.y].to_list(),
+                        ),
+                    ],
+                )
+
             case chart_type:
                 raise ValueError(f"Unsuppored chart type '{chart_type}'")
 
