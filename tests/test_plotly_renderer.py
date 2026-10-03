@@ -33,9 +33,9 @@ def test_render_bar_chart() -> None:
 
     rendered = PlotlyRenderer().render(artifact)
 
-    assert rendered["layout"]["title"]["text"] == "Faturamento por estado"
-    assert rendered["data"][0]["x"] == ["MG", "SP"]
-    assert rendered["data"][0]["y"] == [300, 500]
+    assert rendered.data["layout"]["title"]["text"] == "Faturamento por estado"
+    assert rendered.data["data"][0]["x"] == ["MG", "SP"]
+    assert rendered.data["data"][0]["y"] == [300, 500]
 
 def test_render_line_chart() -> None:
     dataframe = pl.DataFrame({
@@ -60,9 +60,10 @@ def test_render_line_chart() -> None:
 
     rendered = PlotlyRenderer().render(artifact)
 
-    assert rendered["data"][0]["type"] == "scatter"
-    assert rendered["data"][0]["x"] == [2021, 2022, 2023]
-    assert rendered["data"][0]["y"] == [100, 150, 200]
+    assert rendered.type == "chart"
+    assert rendered.renderer == "plotly"
+    assert rendered.data["data"][0]["x"] == [2021, 2022, 2023]
+    assert rendered.data["data"][0]["y"] == [100, 150, 200]
 
 def test_renderer_rejects_non_chart_artifact() -> None:
     artifact = Artifact(

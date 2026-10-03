@@ -6,10 +6,11 @@ import plotly.graph_objects as go
 import plotly.io as pio
 
 from dataflow_domain import Artifact, ArtifactType, ChartSpec, ChartType
+from ..models import *
 
 
 class PlotlyRenderer:
-    def render(self, artifact: Artifact) -> dict[str, Any]:
+    def render(self, artifact: Artifact) -> RenderedArtifact:
         if artifact.type != ArtifactType.CHART:
             raise ValueError("PlotlyRenderer requires a chart artifact.")
 
@@ -19,7 +20,14 @@ class PlotlyRenderer:
         figure = self._create_figure(dataframe, spec)
         parsed = cast(Any, pio.to_json(figure))
 
-        return json.loads(parsed)
+        return RenderedArtifact(
+            type=RenderedArtifactType.CHART,
+            renderer=RendererType.PLOTLY,
+            data=json.loads(parsed),
+            metadata={
+                "chart_type": str(spec.type),
+            },
+        )
 
     def _create_figure(self, dataframe: pl.DataFrame, spec: ChartSpec) -> go.Figure:
         match spec.type:
