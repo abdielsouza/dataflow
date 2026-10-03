@@ -1,3 +1,4 @@
+import pytest
 import polars as pl
 
 from dataflow_analytics import PlotlyRenderer
@@ -35,3 +36,39 @@ def test_render_bar_chart() -> None:
     assert rendered["layout"]["title"]["text"] == "Faturamento por estado"
     assert rendered["data"][0]["x"] == ["MG", "SP"]
     assert rendered["data"][0]["y"] == [300, 500]
+
+def test_render_line_chart() -> None:
+    dataframe = pl.DataFrame({
+        "ano": [2021, 2022, 2023],
+        "vendas": [100, 150, 200],
+    })
+
+    chart = ChartSpec(
+        type=ChartType.LINE,
+        x="ano",
+        y="vendas",
+        title="Vendas por ano",
+    )
+
+    artifact = Artifact(
+        type=ArtifactType.CHART,
+        data={
+            "spec": chart,
+            "data": dataframe,
+        },
+    )
+
+    rendered = PlotlyRenderer().render(artifact)
+
+    assert rendered["data"][0]["type"] == "scatter"
+    assert rendered["data"][0]["x"] == [2021, 2022, 2023]
+    assert rendered["data"][0]["y"] == [100, 150, 200]
+
+def test_renderer_rejects_non_chart_artifact() -> None:
+    artifact = Artifact(
+        type=ArtifactType.TABLE,
+        data={},
+    )
+
+    with pytest.raises(ValueError):
+        PlotlyRenderer().render(artifact)
