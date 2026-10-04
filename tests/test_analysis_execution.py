@@ -22,7 +22,7 @@ def test_complete_analysis_pipeline(tmp_path: Path = Path(".")) -> None:
     dataset = Dataset(name="Vendas", source=str(dataset_path.resolve()))
     analysis = Analysis(name="Análise de Vendas", dataset=dataset)
 
-    analysis.add_operation(
+    filter_node = analysis.add_operation(
         FilterOperation(
             column="vendas",
             operator=">",
@@ -30,7 +30,7 @@ def test_complete_analysis_pipeline(tmp_path: Path = Path(".")) -> None:
         )
     )
 
-    analysis.add_operation(
+    groupby_node = analysis.add_operation(
         GroupByOperation(
             columns=("estado",),
             aggregations={
@@ -39,7 +39,7 @@ def test_complete_analysis_pipeline(tmp_path: Path = Path(".")) -> None:
         )
     )
 
-    analysis.add_operation(
+    create_chart_node = analysis.add_operation(
         CreateChartOperation(
             chart=ChartSpec(
                 type=ChartType.BAR,
@@ -50,6 +50,9 @@ def test_complete_analysis_pipeline(tmp_path: Path = Path(".")) -> None:
         )
     )
 
+    analysis.graph.add_edge(filter_node, groupby_node)
+    analysis.graph.add_edge(groupby_node, create_chart_node)
+
     execution = ExecutionEngine().run(analysis)
 
     print(execution.error)
@@ -57,11 +60,15 @@ def test_complete_analysis_pipeline(tmp_path: Path = Path(".")) -> None:
     assert execution.status == ExecutionStatus.COMPLETED
     assert execution.error is None
 
-    assert len(execution.artifacts) == 3
+    assert len(execution.artifacts_by_node) == 3
 
-    filter_result = execution.artifacts[0]
-    group_result = execution.artifacts[1]
-    chart_result = execution.artifacts[2]
+    assert filter_node.id in execution.artifacts_by_node
+    assert groupby_node.id in execution.artifacts_by_node
+    assert create_chart_node.id in execution.artifacts_by_node
+
+    filter_result = execution.artifacts_by_node[filter_node.id]
+    group_result = execution.artifacts_by_node[groupby_node.id]
+    chart_result = execution.artifacts_by_node[create_chart_node.id]
 
     assert filter_result.type == ArtifactType.TABLE
     assert group_result.type == ArtifactType.TABLE
