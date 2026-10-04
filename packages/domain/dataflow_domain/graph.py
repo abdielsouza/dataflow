@@ -24,6 +24,9 @@ class OperationEdge:
     source: UUID
     target: UUID
 
+    def __hash__(self):
+        return hash((self.source, self.target))
+
 
 class OperationGraph:
     """Armazena operações e as dependências entre elas em um grafo acíclico."""
