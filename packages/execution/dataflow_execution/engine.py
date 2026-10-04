@@ -1,7 +1,6 @@
 """Motor de execução da análise a partir de um grafo de operações."""
 
-import polars as pl
-from typing import cast, Optional
+from typing import Optional
 
 from dataflow_analytics import PolarsEngine, ChartEngine
 from dataflow_domain import (
@@ -16,7 +15,8 @@ from dataflow_domain import (
 )
 from dataflow_storage import DatasetLoader
 from .planner import ExecutionPlanner
-from .context import ExecutionContext
+# from .context import ExecutionContext
+from .executors import SequentialStageExecutor, ExecutionStrategy
 
 
 class ExecutionEngine:
@@ -27,11 +27,13 @@ class ExecutionEngine:
         dataset_loader: Optional[DatasetLoader] = None,
         analytics_engine: Optional[PolarsEngine] = None,
         chart_engine: Optional[ChartEngine] = None,
+        strategy: Optional[ExecutionStrategy] = None,
     ) -> None:
         """Inicializa dependências de carregamento, análise e renderização de gráficos."""
         self._dataset_loader = dataset_loader or DatasetLoader()
         self._analytics_engine = analytics_engine or PolarsEngine()
         self._chart_engine = chart_engine or ChartEngine()
+        self._strategy = strategy or SequentialStageExecutor()
         self._planner = ExecutionPlanner()
 
     def run(self, analysis: Analysis) -> Execution:
@@ -49,7 +51,6 @@ class ExecutionEngine:
             )
 
             plan = self._planner.plan(analysis.graph)
-            context = ExecutionContext()
 
             for node in plan:
                 predecessors = analysis.graph.predecessors(node)
@@ -57,7 +58,6 @@ class ExecutionEngine:
                 inputs = self._resolve_inputs(execution, initial_artifact, predecessors)
                 artifact = self._execute_operation(node.operation, inputs)
 
-                context.set_artifact(node.id, artifact)
                 execution.artifacts_by_node[node.id] = artifact
 
             execution.status = ExecutionStatus.COMPLETED
@@ -91,3 +91,18 @@ class ExecutionEngine:
             return tuple([initial_artifact])
 
         return tuple(execution.artifacts_by_node[node.id] for node in predecessors)
+
+    def _execute_stage(
+        self,
+        execution: Execution,
+        initial_artifact: Artifact,
+        nodes: tuple[OperationNode, ...],
+    ) -> None:
+        def execute_node(node: OperationNode) -> Artifact:
+            inputs = self._resolve_inputs(execution, initial_artifact, tuple([node]))
+            return self._execute_operation(node.operation, inputs)
+
+        results = self._strategy.execute(nodes, execute_node)
+
+        for node, artifact in results.items():
+            execution.artifacts_by_node[node.id] = artifact

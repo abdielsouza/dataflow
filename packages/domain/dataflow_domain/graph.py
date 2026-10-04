@@ -13,6 +13,9 @@ class OperationNode:
     operation: Operation
     id: UUID = field(default_factory=uuid4)
 
+    def __hash__(self):
+        return hash(self.id)
+
 
 @dataclass(frozen=True)
 class OperationEdge:
