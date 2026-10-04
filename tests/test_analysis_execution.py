@@ -9,7 +9,7 @@ from dataflow_domain import (
     Dataset,
     ExecutionStatus,
     FilterOperation,
-    GroupByOperation
+    GroupByOperation,
 )
 from dataflow_execution import ExecutionEngine
 
@@ -17,13 +17,7 @@ from dataflow_execution import ExecutionEngine
 def test_complete_analysis_pipeline(tmp_path: Path = Path(".")) -> None:
     dataset_path = tmp_path / "vendas.csv"
 
-    dataset_path.write_text(
-        "estado,vendas\n"
-        "MG,100\n"
-        "MG,200\n"
-        "SP,500\n"
-        "RJ,50\n"
-    )
+    dataset_path.write_text("estado,vendas\nMG,100\nMG,200\nSP,500\nRJ,50\n")
 
     dataset = Dataset(name="Vendas", source=str(dataset_path.resolve()))
     analysis = Analysis(name="Análise de Vendas", dataset=dataset)

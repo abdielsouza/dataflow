@@ -1,3 +1,5 @@
+"""Tipos de artefatos renderizados para o módulo de visualização."""
+
 from .rendered_artifact import (
     RendererType,
     RenderedArtifactType,

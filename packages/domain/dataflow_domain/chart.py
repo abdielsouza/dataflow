@@ -1,16 +1,24 @@
+"""Especificações de gráficos usadas na criação de artefatos visuais."""
+
 from dataclasses import dataclass
 from typing import Optional
 from enum import StrEnum
 
+
 class ChartType(StrEnum):
-    BAR     = "bar"
-    PIE     = "pie"
-    HIST    = "hist"
-    LINE    = "line"
+    """Tipos de visualização suportados pelo motor de gráficos."""
+
+    BAR = "bar"
+    PIE = "pie"
+    HIST = "hist"
+    LINE = "line"
+
 
 @dataclass(frozen=True)
 class ChartSpec:
-    type:       ChartType
-    x:          str
-    y:          str
-    title:      Optional[str] = None
+    """Define a estrutura de um gráfico para renderização posterior."""
+
+    type: ChartType
+    x: str
+    y: str
+    title: Optional[str] = None

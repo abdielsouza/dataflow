@@ -11,10 +11,12 @@ from dataflow_domain import (
 
 
 def test_render_bar_chart() -> None:
-    dataframe = pl.DataFrame({
-        "estado": ["MG", "SP"],
-        "faturamento": [300, 500],
-    })
+    dataframe = pl.DataFrame(
+        {
+            "estado": ["MG", "SP"],
+            "faturamento": [300, 500],
+        }
+    )
 
     chart = ChartSpec(
         type=ChartType.BAR,
@@ -37,11 +39,14 @@ def test_render_bar_chart() -> None:
     assert rendered.data["data"][0]["x"] == ["MG", "SP"]
     assert rendered.data["data"][0]["y"] == [300, 500]
 
+
 def test_render_line_chart() -> None:
-    dataframe = pl.DataFrame({
-        "ano": [2021, 2022, 2023],
-        "vendas": [100, 150, 200],
-    })
+    dataframe = pl.DataFrame(
+        {
+            "ano": [2021, 2022, 2023],
+            "vendas": [100, 150, 200],
+        }
+    )
 
     chart = ChartSpec(
         type=ChartType.LINE,
@@ -64,6 +69,7 @@ def test_render_line_chart() -> None:
     assert rendered.renderer == "plotly"
     assert rendered.data["data"][0]["x"] == [2021, 2022, 2023]
     assert rendered.data["data"][0]["y"] == [100, 150, 200]
+
 
 def test_renderer_rejects_non_chart_artifact() -> None:
     artifact = Artifact(

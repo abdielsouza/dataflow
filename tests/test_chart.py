@@ -6,6 +6,7 @@ from dataflow_domain import (
     CreateChartOperation,
 )
 
+
 def test_chart_spec() -> None:
     chart = ChartSpec(
         type=ChartType.BAR,
@@ -18,6 +19,7 @@ def test_chart_spec() -> None:
     assert chart.x == "estado"
     assert chart.y == "faturamento"
 
+
 def test_create_chart_operation() -> None:
     chart = ChartSpec(
         type=ChartType.BAR,
@@ -29,6 +31,7 @@ def test_create_chart_operation() -> None:
     operation = CreateChartOperation(chart=chart)
 
     assert operation.type == "create_chart"
+
 
 def test_chart_artifact() -> None:
     chart = ChartSpec(

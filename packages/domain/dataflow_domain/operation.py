@@ -1,11 +1,10 @@
+"""Abstrações base para operações do domínio analítico."""
+
 from abc import ABC, abstractmethod
 
 
 class Operation(ABC):
-    """
-    A data transformation that can be executed by
-    an analytics engine.
-    """
+    """Representa uma transformação de dados executável por um motor analítico."""
 
     @property
     @abstractmethod

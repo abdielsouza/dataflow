@@ -1,10 +1,15 @@
+"""Carregamento de datasets em formatos tabulares suportados."""
+
 from pathlib import Path
 
 import polars as pl
 
 
 class DatasetLoader:
+    """Lê arquivos de dados para um DataFrame Polars a partir de um caminho informado."""
+
     def load(self, source: str) -> pl.DataFrame:
+        """Carrega um dataset em .csv ou .parquet e retorna um DataFrame."""
         path = Path(source)
 
         if not path.exists():

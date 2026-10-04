@@ -1,3 +1,5 @@
+"""Renderizador de gráficos para o backend Plotly."""
+
 import json
 from typing import Any, cast
 
@@ -10,7 +12,10 @@ from ..models import *
 
 
 class PlotlyRenderer:
+    """Converte artefatos de tipo gráfico em objetos Plotly serializáveis."""
+
     def render(self, artifact: Artifact) -> RenderedArtifact:
+        """Gera um artefato renderizado a partir de um gráfico de domínio."""
         if artifact.type != ArtifactType.CHART:
             raise ValueError("PlotlyRenderer requires a chart artifact.")
 
@@ -30,6 +35,7 @@ class PlotlyRenderer:
         )
 
     def _create_figure(self, dataframe: pl.DataFrame, spec: ChartSpec) -> go.Figure:
+        """Cria um objeto Plotly conforme o tipo de gráfico solicitado."""
         match spec.type:
             case ChartType.BAR:
                 figure = go.Figure(

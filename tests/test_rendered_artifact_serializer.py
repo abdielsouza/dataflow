@@ -30,7 +30,7 @@ def test_serialize_rendered_artifact() -> None:
         type=RenderedArtifactType.CHART,
         renderer=RendererType.PLOTLY,
         data=artifact_data,
-        metadata=artifact_metadata
+        metadata=artifact_metadata,
     )
 
     serialized = RenderedArtifactSerializer().serialize(artifact)

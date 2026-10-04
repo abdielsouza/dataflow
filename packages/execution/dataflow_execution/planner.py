@@ -1,8 +1,13 @@
+"""Planejamento da ordem de execução de operações em um grafo."""
+
 from dataflow_domain import OperationNode, OperationGraph
 
 
 class ExecutionPlanner:
+    """Ordena os nós do grafo em uma sequência executável usando topological sort."""
+
     def plan(self, graph: OperationGraph) -> tuple[OperationNode, ...]:
+        """Retorna a sequência topológica das operações do grafo."""
         nodes = graph.nodes
 
         in_degree = {node.id: len(graph.predecessors(node)) for node in nodes}
