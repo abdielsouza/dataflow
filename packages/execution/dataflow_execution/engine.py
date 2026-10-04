@@ -54,12 +54,8 @@ class ExecutionEngine:
             for node in plan:
                 predecessors = analysis.graph.predecessors(node)
 
-                if not predecessors:
-                    input_artifact = initial_artifact
-                else:
-                    input_artifact = self._resolve_input(context, predecessors)
-
-                artifact = self._execute_operation(node.operation, input_artifact)
+                inputs = self._resolve_inputs(execution, initial_artifact, predecessors)
+                artifact = self._execute_operation(node.operation, inputs)
 
                 context.set_artifact(node.id, artifact)
                 execution.artifacts_by_node[node.id] = artifact
@@ -72,18 +68,26 @@ class ExecutionEngine:
 
         return execution
 
-    def _execute_operation(self, operation: Operation, artifact: Artifact) -> Artifact:
+    def _execute_operation(self, operation: Operation, inputs: tuple[Artifact, ...]) -> Artifact:
         """Dispara a operação correta com base em seu tipo."""
         if isinstance(operation, CreateChartOperation):
+            if len(inputs) != 1:
+                raise ValueError(f"'{CreateChartOperation.__name__}' requires exactly one input.")
+    
+            artifact = inputs[0]
+
             return self._chart_engine.create(operation.chart, artifact.data)
 
-        return self._analytics_engine.execute(artifact, operation)
+        return self._analytics_engine.execute(inputs, operation)
 
-    def _resolve_input(
-        self, context: ExecutionContext, predecessors: tuple[OperationNode, ...]
-    ) -> Artifact:
+    def _resolve_inputs(
+        self,
+        execution: Execution,
+        initial_artifact: Artifact,
+        predecessors: tuple[OperationNode, ...],
+    ) -> tuple[Artifact, ...]:
         """Obtém o artefato produzido pelo predecessor único da operação atual."""
-        if len(predecessors) != 1:
-            raise ValueError("Operation currently requires exactly one input.")
+        if not predecessors:
+            return tuple([initial_artifact])
 
-        return context.get_artifact(predecessors[0].id)
+        return tuple(execution.artifacts_by_node[node.id] for node in predecessors)

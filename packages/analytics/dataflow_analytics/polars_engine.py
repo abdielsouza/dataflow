@@ -8,25 +8,34 @@ from dataflow_domain import (
     GroupByOperation,
     FilterOperation,
     SortOperation,
+    ConcatOperation,
 )
 
 
 class PolarsEngine:
     """Executa operações do domínio sobre tabelas Polars."""
 
-    def execute(self, artifact: Artifact, operation: Operation) -> Artifact:
+    def execute(self, artifacts: tuple[Artifact, ...], operation: Operation) -> Artifact:
         """Aplica uma operação de análise a um artefato tabular."""
-        if artifact.type != ArtifactType.TABLE:
-            raise ValueError(f"Artifact must be a table")
-
-        dataframe = artifact.data
+        if any(artifact.type != ArtifactType.TABLE for artifact in artifacts):
+            raise ValueError(f"Artifacts must be tables")
 
         if isinstance(operation, GroupByOperation):
-            return self._execute_group_by(dataframe, operation)
+            self._require_single_input(artifacts)
+            return self._execute_group_by(artifacts[0].data, operation)
+        
         elif isinstance(operation, FilterOperation):
-            return self._execute_filter(dataframe, operation)
+            self._require_single_input(artifacts)
+            return self._execute_filter(artifacts[0].data, operation)
+        
         elif isinstance(operation, SortOperation):
-            return self._execute_sort(dataframe, operation)
+            self._require_single_input(artifacts)
+            return self._execute_sort(artifacts[0].data, operation)
+        
+        elif isinstance(operation, ConcatOperation):
+            self._require_single_input(artifacts)
+            return self._execute_concat(artifacts)
+        
         else:
             raise ValueError(f"Unsupported operation: {operation.type}")
 
@@ -77,3 +86,15 @@ class PolarsEngine:
         result = dataframe.sort(list(operation.columns), descending=operation.descending)
 
         return Artifact(type=ArtifactType.TABLE, data=result)
+
+    def _execute_concat(self, artifacts: tuple[Artifact, ...]) -> Artifact:
+        if not artifacts:
+            raise ValueError("Concat requires at least one input.")
+
+        dataframes = tuple(artifact.data for artifact in artifacts)
+
+        return Artifact(type=ArtifactType.TABLE, data=pl.concat(dataframes))
+
+    def _require_single_input(self, artifacts: tuple[Artifact, ...]) -> None:
+        if len(artifacts) != 1:
+            raise ValueError("This operation requires exactly one input.")

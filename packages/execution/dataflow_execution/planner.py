@@ -8,24 +8,35 @@ class ExecutionPlanner:
 
     def plan(self, graph: OperationGraph) -> tuple[OperationNode, ...]:
         """Retorna a sequência topológica das operações do grafo."""
-        nodes = graph.nodes
+        return tuple(node for stage in self._plan_stages(graph) for node in stage)
 
+    def _plan_stages(self, graph: OperationGraph) -> tuple[tuple[OperationNode, ...], ...]:
+        nodes = graph.nodes
+        
         in_degree = {node.id: len(graph.predecessors(node)) for node in nodes}
         ready = [node for node in nodes if in_degree[node.id] == 0]
 
-        ordered: list[OperationNode] = []
+        processed: set = set()
+        stages: list[tuple[OperationNode, ...]] = []
 
         while ready:
-            node = ready.pop(0)
-            ordered.append(node)
+            current_stage = tuple(ready)
+            stages.append(current_stage)
 
-            for successor in graph.successors(node):
-                in_degree[successor.id] -= 1
+            for node in current_stage:
+                processed.add(node.id)
 
-                if in_degree[successor.id] == 0:
-                    ready.append(successor)
+                for successor in graph.successors(node):
+                    in_degree[successor.id] -= 1
 
-        if len(ordered) != len(nodes):
+            ready = [
+                node for node in nodes
+                if (node.id not in processed and in_degree[node.id] == 0)
+            ]
+
+        processed_nodes = sum(len(stage) for stage in stages)
+
+        if processed_nodes != len(nodes):
             raise ValueError("Operation graph contains a cycle.")
 
-        return tuple(ordered)
+        return tuple(stages)

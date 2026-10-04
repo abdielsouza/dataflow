@@ -1,6 +1,12 @@
 """Modelos e operações do domínio que definem o fluxo de análise e execução."""
 
-from .operations import GroupByOperation, FilterOperation, SortOperation, CreateChartOperation
+from .operations import (
+    GroupByOperation, 
+    FilterOperation, 
+    SortOperation, 
+    CreateChartOperation,
+    ConcatOperation,
+)
 from .analysis import Analysis
 from .dataset import Dataset
 from .operation import Operation
@@ -16,6 +22,7 @@ __all__ = [
     "FilterOperation",
     "SortOperation",
     "CreateChartOperation",
+    "ConcatOperation",
     # models
     "Analysis",
     "Dataset",
