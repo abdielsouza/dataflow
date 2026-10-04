@@ -16,6 +16,12 @@ class OperationNode:
     def __hash__(self):
         return hash(self.id)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, OperationNode):
+            return NotImplemented
+
+        return self.id == other.id
+
 
 @dataclass(frozen=True)
 class OperationEdge:
@@ -27,6 +33,11 @@ class OperationEdge:
     def __hash__(self):
         return hash((self.source, self.target))
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, OperationEdge):
+            return NotImplemented
+
+        return (self.source == other.source) and (self.target == other.target)
 
 class OperationGraph:
     """Armazena operações e as dependências entre elas em um grafo acíclico."""
