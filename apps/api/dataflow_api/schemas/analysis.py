@@ -14,12 +14,15 @@ from dataflow_domain.operations import (
 
 
 class ChartRequest(BaseModel):
+    """Representa a especificação de um gráfico enviada pela API."""
+
     type:   str
     x:      str
     y:      str
     title:  Optional[str] = None
 
     def to_domain(self) -> ChartSpec:
+        """Converte a requisição em uma especificação de gráfico do domínio."""
         return ChartSpec(
             type=ChartType(self.type),
             x=self.x,
@@ -29,11 +32,14 @@ class ChartRequest(BaseModel):
 
 
 class OperationRequest(BaseModel):
+    """Representa uma operação analítica recebida pela API."""
+
     id:         UUID
     type:       str
     parameters: dict[str, Any]
 
     def to_domain(self) -> Operation:
+        """Cria a operação correspondente no modelo de domínio analítico."""
         match self.type:
             case "filter":
                 return FilterOperation(
@@ -76,25 +82,33 @@ class OperationRequest(BaseModel):
 
 
 class OperationEdgeRequest(BaseModel):
+    """Descreve uma aresta entre duas operações em um grafo de análise."""
+
     source: UUID
     target: UUID
 
 
 class DatasetRequest(BaseModel):
+    """Define a origem de dados de uma análise recebida pela API."""
+
     name:   str
     source: str
 
     def to_domain(self) -> Dataset:
+        """Converte a fonte de dados em um modelo de domínio."""
         return Dataset(name=self.name, source=self.source)
 
 
 class AnalysisRequest(BaseModel):
+    """Estrutura completa de uma análise enviada pela API."""
+
     name:       str
     dataset:    DatasetRequest
     operations: list[OperationRequest]
     edges:      list[OperationEdgeRequest]
 
     def to_domain(self) -> Analysis:
+        """Transforma a requisição em um objeto de domínio com grafo e operações."""
         analysis = Analysis(name=self.name, dataset=self.dataset.to_domain())
         nodes = {}
 

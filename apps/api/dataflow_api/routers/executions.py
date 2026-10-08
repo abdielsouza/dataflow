@@ -1,3 +1,5 @@
+"""Endpoints de execução de análises via API HTTP."""
+
 from fastapi import Depends
 
 from .base import AbstractRouter
@@ -7,17 +9,21 @@ from ..dependencies import get_execution_service
 
 
 class ExecutionRouter(AbstractRouter):
+    """Expõe operações para iniciar e monitorar execuções de análise."""
+
     prefix = "/executions"
     tags = ("executions",)
 
     def _register_routes(self):
+        """Registra a rota de criação de execução da análise."""
         self.router.add_api_route("", self.execute, methods=["POST"], response_model=ExecutionResponse)
-    
+
     def execute(
         self,
         request: ExecutionRequest,
         service: ExecutionService = Depends(get_execution_service),
     ) -> ExecutionResponse:
+        """Converte a requisição em análise e retorna o resultado da execução."""
         analysis = request.to_domain()
         execution = service.execute(analysis)
 

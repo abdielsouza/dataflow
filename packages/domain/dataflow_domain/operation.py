@@ -8,4 +8,6 @@ class Operation(ABC):
 
     @property
     @abstractmethod
-    def type(self) -> str: ...
+    def type(self) -> str:
+        """Retorna o identificador da operação no sistema de domínio."""
+        ...

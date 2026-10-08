@@ -88,6 +88,7 @@ class PolarsEngine:
         return Artifact(type=ArtifactType.TABLE, data=result)
 
     def _execute_concat(self, artifacts: tuple[Artifact, ...]) -> Artifact:
+        """Concatena vários artefatos tabulares em um único DataFrame."""
         if not artifacts:
             raise ValueError("Concat requires at least one input.")
 
@@ -96,5 +97,6 @@ class PolarsEngine:
         return Artifact(type=ArtifactType.TABLE, data=pl.concat(dataframes))
 
     def _require_single_input(self, artifacts: tuple[Artifact, ...]) -> None:
+        """Valida que a operação receba exatamente um artefato de entrada."""
         if len(artifacts) != 1:
             raise ValueError("This operation requires exactly one input.")

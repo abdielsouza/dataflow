@@ -98,7 +98,10 @@ class ExecutionEngine:
         initial_artifact: Artifact,
         nodes: tuple[OperationNode, ...],
     ) -> None:
+        """Executa um estágio completo de nós e persiste os artefatos resultantes."""
+
         def execute_node(node: OperationNode) -> Artifact:
+            """Resolve os dados de entrada para um nó e executa a operação correspondente."""
             inputs = self._resolve_inputs(execution, initial_artifact, tuple([node]))
             return self._execute_operation(node.operation, inputs)
 
