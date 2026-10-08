@@ -2,7 +2,7 @@
 name = "dataflow-domain"
 version = "0.1.0"
 description = "Core domain model for Dataflow."
-requires-python = ">=3.13"
+requires-python = ">=3.15"
 dependencies = []
 
 [build-system]

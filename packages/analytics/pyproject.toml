@@ -2,7 +2,7 @@
 name = "dataflow-analytics"
 version = "0.1.0"
 description = "Data analysis engines for Dataflow."
-requires-python = ">=3.13"
+requires-python = ">=3.15"
 dependencies = [
     "dataflow-domain",
     "polars[rtcompat]>=1.33",
