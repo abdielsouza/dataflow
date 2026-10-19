@@ -5,7 +5,9 @@ from fastapi import Depends
 from .base import AbstractRouter
 from ..schemas import ExecutionResponse, ExecutionRequest
 from ..services import ExecutionService
-from ..dependencies import get_execution_service
+from ..dependencies import get_execution_service, get_current_user
+
+from dataflow_domain import User
 
 
 class ExecutionRouter(AbstractRouter):
@@ -22,6 +24,7 @@ class ExecutionRouter(AbstractRouter):
         self,
         request: ExecutionRequest,
         service: ExecutionService = Depends(get_execution_service),
+        user: User = Depends(get_current_user),
     ) -> ExecutionResponse:
         """Converte a requisição em análise e retorna o resultado da execução."""
         analysis = request.to_domain()

@@ -13,10 +13,12 @@ dev = [
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.16.8",
+    "httpx>=0.28.1",
     "dataflow-analytics",
     "dataflow-domain",
     "dataflow-execution",
     "dataflow-storage",
+    "dataflow-infrastructure",
 ]
 
 api = [
@@ -30,6 +32,7 @@ members = [
     "packages/analytics",
     "packages/execution",
     "packages/storage",
+    "packages/infrastructure",
 ]
 
 [tool.uv.sources]
@@ -37,6 +40,7 @@ dataflow-analytics = { workspace = true }
 dataflow-domain = { workspace = true }
 dataflow-execution = { workspace = true }
 dataflow-storage = { workspace = true }
+dataflow-infrastructure = { workspace = true }
 dataflow-api = { workspace = true }
 
 [tool.pytest.ini_options]

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from typing import Optional, Any
 
@@ -125,3 +125,29 @@ class AnalysisRequest(BaseModel):
             analysis.graph.add_edge(nodes[edge.source], nodes[edge.target])
 
         return analysis
+
+
+class SavedDatasetResponse(BaseModel):
+    name:   str
+    source: str
+
+
+class SavedAnalysisResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id:         UUID
+    dataset_id: UUID
+    name:       str
+    dataset:    SavedDatasetResponse
+    definition: dict[str, Any]
+    created_at: str
+    updated_at: str
+
+
+class AnalysisListItem(BaseModel):
+    id:         UUID
+    dataset_id: UUID
+    name:       str
+    dataset:    SavedDatasetResponse
+    created_at: str
+    updated_at: str

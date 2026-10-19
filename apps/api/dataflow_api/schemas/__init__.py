@@ -5,6 +5,15 @@ from .analysis import (
     OperationRequest,
     OperationEdgeRequest,
     DatasetRequest,
+    SavedDatasetResponse,
+    SavedAnalysisResponse,
+    AnalysisListItem,
+)
+from .auth import (
+    RegisterRequest,
+    LoginRequest,
+    UserResponse,
+    TokenResponse,
 )
 
 __all__ = [
@@ -15,4 +24,11 @@ __all__ = [
     "OperationRequest",
     "OperationEdgeRequest",
     "DatasetRequest",
+    "RegisterRequest",
+    "LoginRequest",
+    "UserResponse",
+    "TokenResponse",
+    "SavedDatasetResponse",
+    "SavedAnalysisResponse",
+    "AnalysisListItem",
 ]

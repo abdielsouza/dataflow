@@ -6,7 +6,22 @@ requires-python = ">=3.15"
 dependencies = [
     "fastapi",
     "uvicorn",
+    "argon2-cffi",
+    "pyjwt",
+    "python-dotenv",
+    "dataflow-analytics",
+    "dataflow-domain",
+    "dataflow-execution",
+    "dataflow-storage",
+    "dataflow-infrastructure",
 ]
+
+[tool.uv.sources]
+dataflow-analytics = { workspace = true }
+dataflow-domain = { workspace = true }
+dataflow-execution = { workspace = true }
+dataflow-storage = { workspace = true }
+dataflow-infrastructure = { workspace = true }
 
 [build-system]
 requires = ["uv_build>=0.12.18,<0.13"]

@@ -1,30 +1,12 @@
-from dataflow_analytics import (
-    RenderedArtifact,
-    RenderedArtifactType,
-    RendererType,
-    RenderedArtifactSerializer,
-)
+from dataflow_analytics import RenderedArtifact, RenderedArtifactSerializer, RenderedArtifactType, RendererType
 
 
 def test_serialize_rendered_artifact() -> None:
     artifact_data = {
-        "data": [
-            {
-                "type": "bar",
-                "x": ["MG", "SP"],
-                "y": [300, 500],
-            },
-        ],
-        "layout": {
-            "title": {
-                "text": "Faturamento por estado",
-            },
-        },
+        "data": [{"type": "bar", "x": ["MG", "SP"], "y": [300, 500]}],
+        "layout": {"title": {"text": "Faturamento por estado"}},
     }
-
-    artifact_metadata = {
-        "chart_type": "bar",
-    }
+    artifact_metadata = {"chart_type": "bar"}
 
     artifact = RenderedArtifact(
         type=RenderedArtifactType.CHART,

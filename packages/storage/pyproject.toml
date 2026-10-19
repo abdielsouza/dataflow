@@ -6,6 +6,7 @@ requires-python = ">=3.15"
 dependencies = [
     "dataflow-domain",
     "polars[rtcompat]>=1.33",
+    "turso_serverless",
 ]
 
 [tool.uv.sources]

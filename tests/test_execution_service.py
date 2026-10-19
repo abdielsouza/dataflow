@@ -1,8 +1,8 @@
 from unittest.mock import Mock
 
+from dataflow_api import ExecutionService
 from dataflow_domain import Analysis, Execution
 from dataflow_execution import ExecutionEngine
-from dataflow_api import ExecutionService
 
 
 def test_execute_delegates_to_engine() -> None:
@@ -16,5 +16,4 @@ def test_execute_delegates_to_engine() -> None:
     result = service.execute(analysis)
 
     engine.run.assert_called_once_with(analysis)
-
     assert result is execution

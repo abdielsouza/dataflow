@@ -1,12 +1,8 @@
 """Modelos e operações do domínio que definem o fluxo de análise e execução."""
 
-from .operations import (
-    GroupByOperation, 
-    FilterOperation, 
-    SortOperation, 
-    CreateChartOperation,
-    ConcatOperation,
-)
+from .operations import *
+from .repositories import *
+
 from .analysis import Analysis
 from .dataset import Dataset
 from .operation import Operation
@@ -15,14 +11,9 @@ from .project import Project
 from .artifact import Artifact, ArtifactType
 from .chart import ChartSpec, ChartType
 from .graph import OperationNode, OperationEdge, OperationGraph
+from .user import User
 
 __all__ = [
-    # operations
-    "GroupByOperation",
-    "FilterOperation",
-    "SortOperation",
-    "CreateChartOperation",
-    "ConcatOperation",
     # models
     "Analysis",
     "Dataset",
@@ -37,4 +28,5 @@ __all__ = [
     "OperationNode",
     "OperationEdge",
     "OperationGraph",
+    "User",
 ]
