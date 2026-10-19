@@ -11,3 +11,9 @@ __pycache__
 # VSCode
 .vscode/
 .coverage
+
+# env files
+*.env
+
+# Specific files
+tests/conftest.py
