@@ -33,6 +33,7 @@ const navigation = [
 ];
 
 export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
+  // Navegação lateral principal: regiões de trabalho, monitoramento e ajustes.
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-[#111318] text-slate-300">
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">

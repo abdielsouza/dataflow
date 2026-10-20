@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
-  // ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
   Bell,
@@ -9,7 +8,6 @@ import {
   Clock3,
   Database,
   FilePlus2,
-  // Filter,
   MoreHorizontal,
   Plus,
   Search,
@@ -19,12 +17,16 @@ import {
 
 import { Sidebar } from "../components/layout/Sidebar";
 import {
-  initialAnalyses,
   type Analysis,
   type AnalysisStatus,
 } from "../data/analyses";
-
 import WorkflowEditor from "../features/analyses/WorkflowEditor";
+import {
+  useAnalyses,
+  useCreateAnalysis,
+} from "../features/analyses/analysisQueries";
+import { clearAccessToken, getAccessToken, type AnalysisListItem } from "../lib/api";
+import { LoginForm } from "../features/auth/LoginForm";
 
 const statusConfig: Record<
   AnalysisStatus,
@@ -44,13 +46,41 @@ const statusConfig: Record<
   },
 };
 
+function mapRemoteAnalysis(item: AnalysisListItem): Analysis {
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.dataset?.name ?? "Dataset do backend",
+    updatedAt: new Date(item.updated_at).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
+    status: "success",
+    operationsCount: 0,
+  };
+}
+
 export default function App() {
+  // --- Estado de autenticação e sessão da UI ---
   const [activeItem, setActiveItem] = useState("Overview");
-  const [analyses, setAnalyses] = useState<Analysis[]>(initialAnalyses);
   const [search, setSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newAnalysisName, setNewAnalysisName] = useState("");
   const [openedAnalysis, setOpenedAnalysis] = useState<Analysis | null>(null);
+  const [authenticated, setAuthenticated] = useState(() => Boolean(getAccessToken()));
+
+  const { data: analysesFromApi = [], isLoading, isError, error } = useAnalyses();
+  const createAnalysisMutation = useCreateAnalysis();
+
+  const analyses = analysesFromApi.map(mapRemoteAnalysis);
+
+  useEffect(() => {
+    const syncAuthState = () => setAuthenticated(Boolean(getAccessToken()));
+
+    window.addEventListener("storage", syncAuthState);
+    return () => window.removeEventListener("storage", syncAuthState);
+  }, []);
 
   const filteredAnalyses = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -67,20 +97,25 @@ export default function App() {
 
     if (!name) return;
 
-    const analysis: Analysis = {
-      id: crypto.randomUUID(),
-      name,
-      description: "Nova análise de dados",
-      updatedAt: "Agora",
-      status: "draft",
-      operationsCount: 0,
-    };
-
-    setAnalyses((current) => [analysis, ...current]);
-    setNewAnalysisName("");
-    setShowCreateModal(false);
-    setActiveItem("Analyses");
-    setOpenedAnalysis(analysis);
+    createAnalysisMutation.mutate(
+      {
+        name,
+        dataset: {
+          name,
+          source: "manual",
+        },
+        operations: [],
+        edges: [],
+      },
+      {
+        onSuccess: (saved) => {
+          setNewAnalysisName("");
+          setShowCreateModal(false);
+          setActiveItem("Analyses");
+          setOpenedAnalysis(mapRemoteAnalysis(saved));
+        },
+      },
+    );
   }
 
   const successfulCount = analyses.filter(
@@ -92,6 +127,17 @@ export default function App() {
     0,
   );
 
+  function handleLogout() {
+    clearAccessToken();
+    setAuthenticated(false);
+    setOpenedAnalysis(null);
+  }
+
+  if (!authenticated) {
+    return <LoginForm onSuccess={() => setAuthenticated(true)} />;
+  }
+
+  // --- Editor de análise em tela cheia ---
   if (openedAnalysis) {
     return (
       <WorkflowEditor
@@ -105,6 +151,7 @@ export default function App() {
     <div className="flex h-screen min-w-0 overflow-hidden bg-[#f7f8fa] text-slate-900">
       <Sidebar activeItem={activeItem} onNavigate={setActiveItem} />
 
+      {/* Layout principal do workspace: cabeçalho, conteúdo e ações globais. */}
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 sm:px-8">
           <div className="flex items-center gap-2 text-sm text-slate-400">
@@ -141,11 +188,19 @@ export default function App() {
               <Bell size={17} />
               <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
             </button>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              Logout
+            </button>
           </div>
         </header>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1440px] px-5 py-8 sm:px-8 lg:px-10">
+          <div className="mx-auto max-w-360 px-5 py-8 sm:px-8 lg:px-10">
             {activeItem === "Overview" || activeItem === "Analyses" ? (
               <>
                 <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
@@ -226,7 +281,7 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/2">
                     <div className="hidden grid-cols-[minmax(0,2fr)_minmax(120px,0.8fr)_minmax(120px,0.8fr)_40px] gap-4 border-b border-slate-100 bg-slate-50/70 px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 md:grid">
                       <span>Analysis</span>
                       <span>Status</span>
@@ -234,14 +289,22 @@ export default function App() {
                       <span />
                     </div>
 
-                    {filteredAnalyses.length > 0 ? (
+                    {isLoading ? (
+                      <div className="px-5 py-12 text-center text-sm text-slate-500">
+                        Loading analyses from the API...
+                      </div>
+                    ) : isError ? (
+                      <div className="px-5 py-12 text-center text-sm text-red-600">
+                        {error instanceof Error ? error.message : "Failed to load analyses."}
+                      </div>
+                    ) : filteredAnalyses.length > 0 ? (
                       filteredAnalyses.map((analysis) => (
                         <AnalysisRow
-                        key={analysis.id}
-                        analysis={analysis}
-                        onOpen={() => {
-                          setOpenedAnalysis(analysis);
-                        }}
+                          key={analysis.id}
+                          analysis={analysis}
+                          onOpen={() => {
+                            setOpenedAnalysis(analysis);
+                          }}
                         />
                       ))
                     ) : (
@@ -451,7 +514,7 @@ function MetricCard({
   iconClass: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/[0.02]">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/2">
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500">{label}</p>
         <div

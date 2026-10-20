@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ComponentType } from "react";
 import {
   addEdge,
   Background,
@@ -34,7 +34,7 @@ import type {
 } from "./types";
 import { serializePipeline } from "./serializePipeline";
 import { executeAnalysis } from "./executeAnalysis";
-import { ApiError, getAccessToken } from "../../lib/api";
+import { api, ApiError, getAccessToken } from "../../lib/api";
 
 interface WorkflowEditorProps {
   analysisName: string;
@@ -45,7 +45,7 @@ interface OperationOption {
   type: OperationType;
   label: string;
   description: string;
-  icon: typeof FilterIcon;
+  icon: ComponentType<{ size?: number }>; 
   parameters: Record<string, unknown>;
 }
 
@@ -303,7 +303,7 @@ export default function WorkflowEditor({
     return true;
   }
 
-  function handleSaveDraft() {
+  async function handleSaveDraft() {
     const analysis = serializePipeline(
       analysisName,
       {
@@ -314,9 +314,14 @@ export default function WorkflowEditor({
       edges,
     );
 
-    // Temporary MVP behavior: the draft is not persisted yet.
-    console.info("Dataflow pipeline draft:", analysis);
-    setNotice("Draft prepared in memory. Persistence is not connected yet.");
+    try {
+      const saved = await api.createAnalysis(analysis);
+      setNotice(`Draft saved successfully: ${saved.name}`);
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : "Unable to save the draft.",
+      );
+    }
   }
 
   async function handleRun() {
