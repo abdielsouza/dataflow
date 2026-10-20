@@ -108,18 +108,51 @@ class AnalysisRequest(BaseModel):
     edges:      list[OperationEdgeRequest]
 
     def to_domain(self) -> Analysis:
-        """Transforma a requisição em um objeto de domínio com grafo e operações."""
-        analysis = Analysis(name=self.name, dataset=self.dataset.to_domain())
+        """Valida o grafo recebido e converte-o para o modelo de domínio."""
+        if not self.name.strip():
+            raise ValueError("Analysis name cannot be empty.")
+        if not self.dataset.name.strip():
+            raise ValueError("Dataset name cannot be empty.")
+
+        operation_ids = [operation.id for operation in self.operations]
+        if len(operation_ids) != len(set(operation_ids)):
+            raise ValueError("Operation IDs must be unique.")
+
+        known_ids = set(operation_ids)
+        seen_edges: set[tuple[UUID, UUID]] = set()
+        adjacency: dict[UUID, list[UUID]] = {node_id: [] for node_id in known_ids}
+        indegree: dict[UUID, int] = {node_id: 0 for node_id in known_ids}
+
+        for edge in self.edges:
+            if edge.source not in known_ids or edge.target not in known_ids:
+                raise ValueError("Every edge must reference existing operations.")
+            if edge.source == edge.target:
+                raise ValueError("Self-referencing edges are not allowed.")
+            pair = (edge.source, edge.target)
+            if pair in seen_edges:
+                raise ValueError("Duplicate edges are not allowed.")
+            seen_edges.add(pair)
+            adjacency[edge.source].append(edge.target)
+            indegree[edge.target] += 1
+
+        # Kahn's algorithm rejects cycles before the execution engine receives the graph.
+        ready = [node_id for node_id, degree in indegree.items() if degree == 0]
+        visited = 0
+        while ready:
+            current = ready.pop()
+            visited += 1
+            for successor in adjacency[current]:
+                indegree[successor] -= 1
+                if indegree[successor] == 0:
+                    ready.append(successor)
+        if visited != len(known_ids):
+            raise ValueError("Pipeline graph must be acyclic.")
+
+        analysis = Analysis(name=self.name.strip(), dataset=self.dataset.to_domain())
         nodes = {}
-
         for operation_request in self.operations:
-            operation = operation_request.to_domain()
-            node = analysis.add_operation(operation)
-
-            if operation_request.id is not None:
-                nodes[operation_request.id] = node
-            else:
-                nodes[node.id] = node
+            node = analysis.add_operation(operation_request.to_domain())
+            nodes[operation_request.id] = node
 
         for edge in self.edges:
             analysis.graph.add_edge(nodes[edge.source], nodes[edge.target])

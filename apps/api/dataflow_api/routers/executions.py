@@ -6,6 +6,7 @@ from .base import AbstractRouter
 from ..schemas import ExecutionResponse, ExecutionRequest
 from ..services import ExecutionService
 from ..dependencies import get_execution_service, get_current_user
+from .datasets import _owned_source
 
 from dataflow_domain import User
 
@@ -26,7 +27,8 @@ class ExecutionRouter(AbstractRouter):
         service: ExecutionService = Depends(get_execution_service),
         user: User = Depends(get_current_user),
     ) -> ExecutionResponse:
-        """Converte a requisição em análise e retorna o resultado da execução."""
+        """Validate dataset ownership, then execute the requested analysis."""
+        _owned_source(request.analysis.dataset.source, str(user.id))
         analysis = request.to_domain()
         execution = service.execute(analysis)
 

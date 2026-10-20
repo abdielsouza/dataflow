@@ -73,3 +73,12 @@ export default defineConfig([
 ])
 
 ```
+
+## Dataset import in the workflow editor
+
+The editor accepts CSV and Parquet uploads up to 20 MB. The API stores uploads under
+`DATAFLOW_DATA_DIR/<user-id>/` (default: `.dataflow/datasets/` relative to the API working
+ directory), then returns a bounded preview. Set `DATAFLOW_DATA_DIR` to a persistent volume
+path when running outside local development. Uploaded file contents are not stored in the
+analysis JSON; the saved definition references the server-side file path, so the configured
+storage directory must persist between API restarts.

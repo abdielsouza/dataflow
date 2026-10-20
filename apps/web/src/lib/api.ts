@@ -62,6 +62,15 @@ export interface AnalysisListItem {
   updated_at:  string;
 }
 
+export interface DatasetPreview {
+  name: string;
+  source?: string;
+  size_bytes?: number;
+  columns: Array<{ name: string; dtype: string }>;
+  rows: Array<Record<string, unknown>>;
+  preview_row_count: number;
+}
+
 export interface AnalysisExecutionResponse {
   id: string;
   analysis_id: string;
@@ -181,6 +190,31 @@ export const api = {
         body: JSON.stringify(definition),
       },
     );
+  },
+
+  updateAnalysis(id: string, definition: AnalysisDefinition) {
+    return apiRequest<SavedAnalysis>(
+      `/analyses/${encodeURIComponent(id)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(definition),
+      },
+    );
+  },
+
+  uploadDataset(file: File) {
+    return apiRequest<DatasetPreview>("/datasets/upload", {
+      method: "POST",
+      headers: { "X-Filename": encodeURIComponent(file.name), "Content-Type": "application/octet-stream" },
+      body: file,
+    });
+  },
+
+  previewDataset(source: string) {
+    return apiRequest<DatasetPreview>("/datasets/preview", {
+      method: "POST",
+      body: JSON.stringify({ source }),
+    });
   },
 
   executeAnalysis(definition: AnalysisDefinition) {

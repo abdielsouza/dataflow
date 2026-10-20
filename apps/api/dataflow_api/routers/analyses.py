@@ -41,6 +41,13 @@ class AnalysisRouter(AbstractRouter):
             response_model=SavedAnalysisResponse,
         )
 
+        self.router.add_api_route(
+            "/{analysis_id}",
+            self.update,
+            methods=["PUT"],
+            response_model=SavedAnalysisResponse,
+        )
+
 
     def create(
         self,
@@ -71,6 +78,32 @@ class AnalysisRouter(AbstractRouter):
         analyses = repo.list_by_owner(user.id)
 
         return [AnalysisListItem.model_validate(analysis) for analysis in analyses]
+
+
+    def update(
+        self,
+        analysis_id: UUID,
+        request: AnalysisRequest,
+        user: User = Depends(get_current_user),
+        repo: TursoAnalysisRepository = Depends(get_analysis_repository),
+    ) -> SavedAnalysisResponse:
+        try:
+            request.to_domain()
+        except (ValueError, KeyError, TypeError) as exc:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid analysis definition: {exc}",
+            ) from exc
+
+        saved = repo.update(
+            owner_id=user.id,
+            analysis_id=analysis_id,
+            definition=request.model_dump(mode="json"),
+        )
+        if saved is None:
+            raise HTTPException(status_code=404, detail="Analysis not found.")
+
+        return SavedAnalysisResponse.model_validate(saved)
 
 
     def get(

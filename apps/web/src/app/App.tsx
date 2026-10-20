@@ -23,6 +23,7 @@ import {
 import WorkflowEditor from "../features/analyses/WorkflowEditor";
 import {
   useAnalyses,
+  useAnalysis,
   useCreateAnalysis,
 } from "../features/analyses/analysisQueries";
 import { clearAccessToken, getAccessToken, type AnalysisListItem } from "../lib/api";
@@ -56,7 +57,7 @@ function mapRemoteAnalysis(item: AnalysisListItem): Analysis {
       month: "short",
       year: "numeric",
     }),
-    status: "success",
+    status: "draft",
     operationsCount: 0,
   };
 }
@@ -72,6 +73,8 @@ export default function App() {
 
   const { data: analysesFromApi = [], isLoading, isError, error } = useAnalyses();
   const createAnalysisMutation = useCreateAnalysis();
+  const { data: openedAnalysisDetail, isLoading: isOpenedAnalysisLoading, error: openedAnalysisError } =
+    useAnalysis(openedAnalysis?.id);
 
   const analyses = analysesFromApi.map(mapRemoteAnalysis);
 
@@ -102,7 +105,7 @@ export default function App() {
         name,
         dataset: {
           name,
-          source: "manual",
+          source: "",
         },
         operations: [],
         edges: [],
@@ -139,9 +142,37 @@ export default function App() {
 
   // --- Editor de análise em tela cheia ---
   if (openedAnalysis) {
+    if (isOpenedAnalysisLoading) {
+      return (
+        <div className="flex h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">
+          Loading saved analysis…
+        </div>
+      );
+    }
+
+    if (!openedAnalysisDetail) {
+      return (
+        <div className="flex h-screen flex-col items-center justify-center gap-3 bg-slate-50 px-6 text-center">
+          <p className="text-sm text-red-600">
+            {openedAnalysisError instanceof Error ? openedAnalysisError.message : "Could not load this analysis."}
+          </p>
+          <button
+            type="button"
+            onClick={() => setOpenedAnalysis(null)}
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium"
+          >
+            Back to analyses
+          </button>
+        </div>
+      );
+    }
+
     return (
       <WorkflowEditor
+        key={openedAnalysis.id}
+        analysisId={openedAnalysis.id}
         analysisName={openedAnalysis.name}
+        initialDefinition={openedAnalysisDetail.definition}
         onBack={() => setOpenedAnalysis(null)}
       />
     );

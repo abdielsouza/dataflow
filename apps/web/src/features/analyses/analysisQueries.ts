@@ -23,6 +23,19 @@ export function useAnalysis(id: string | undefined) {
 	});
 }
 
+export function useUpdateAnalysis() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ id, definition }: { id: string; definition: AnalysisDefinition }) =>
+			api.updateAnalysis(id, definition),
+		onSuccess: async (saved) => {
+			queryClient.setQueryData(analysisKeys.detail(saved.id), saved);
+			await queryClient.invalidateQueries({ queryKey: analysisKeys.all });
+		},
+	});
+}
+
 export function useCreateAnalysis() {
 	const queryClient = useQueryClient();
 

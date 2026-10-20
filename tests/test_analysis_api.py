@@ -92,3 +92,52 @@ def test_analysis_request_with_unsupported_operation_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="Unsupported operation type: unknown"):
         request.to_domain()
+
+
+def test_analysis_request_rejects_edges_to_unknown_operations() -> None:
+    operation_id = uuid4()
+    request = AnalysisRequest(
+        name="Análise inválida",
+        dataset=DatasetRequest(name="Vendas", source="vendas.csv"),
+        operations=[OperationRequest(id=operation_id, type="sort", parameters={"columns": ["vendas"]})],
+        edges=[OperationEdgeRequest(source=operation_id, target=uuid4())],
+    )
+
+    with pytest.raises(ValueError, match="Every edge must reference existing operations"):
+        request.to_domain()
+
+
+def test_analysis_request_rejects_cycles() -> None:
+    first_id = uuid4()
+    second_id = uuid4()
+    request = AnalysisRequest(
+        name="Análise cíclica",
+        dataset=DatasetRequest(name="Vendas", source="vendas.csv"),
+        operations=[
+            OperationRequest(id=first_id, type="sort", parameters={"columns": ["vendas"]}),
+            OperationRequest(id=second_id, type="sort", parameters={"columns": ["vendas"]}),
+        ],
+        edges=[
+            OperationEdgeRequest(source=first_id, target=second_id),
+            OperationEdgeRequest(source=second_id, target=first_id),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="must be acyclic"):
+        request.to_domain()
+
+
+def test_analysis_request_rejects_duplicate_operation_ids() -> None:
+    operation_id = uuid4()
+    request = AnalysisRequest(
+        name="Análise inválida",
+        dataset=DatasetRequest(name="Vendas", source="vendas.csv"),
+        operations=[
+            OperationRequest(id=operation_id, type="sort", parameters={"columns": ["vendas"]}),
+            OperationRequest(id=operation_id, type="sort", parameters={"columns": ["vendas"]}),
+        ],
+        edges=[],
+    )
+
+    with pytest.raises(ValueError, match="Operation IDs must be unique"):
+        request.to_domain()

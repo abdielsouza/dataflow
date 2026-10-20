@@ -1,4 +1,4 @@
-import { useCallback, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useState, type ComponentType } from "react";
 import {
   addEdge,
   Background,
@@ -33,11 +33,14 @@ import type {
   PipelineNodeData,
 } from "./types";
 import { serializePipeline } from "./serializePipeline";
+import { useUpdateAnalysis } from "./analysisQueries";
 import { executeAnalysis } from "./executeAnalysis";
-import { api, ApiError, getAccessToken } from "../../lib/api";
+import { ApiError, api, getAccessToken, type AnalysisDefinition, type DatasetPreview } from "../../lib/api";
 
 interface WorkflowEditorProps {
+  analysisId: string;
   analysisName: string;
+  initialDefinition?: AnalysisDefinition;
   onBack: () => void;
 }
 
@@ -133,7 +136,9 @@ const initialNodes: Node<PipelineNodeData>[] = [
 const initialEdges: Edge[] = [];
 
 export default function WorkflowEditor({
+  analysisId,
   analysisName,
+  initialDefinition,
   onBack,
 }: WorkflowEditorProps) {
   const [nodes, setNodes, onNodesChange] =
@@ -149,11 +154,94 @@ export default function WorkflowEditor({
   const [showSettings, setShowSettings] = useState(true);
   const [datasetName, setDatasetName] = useState("My dataset");
   const [datasetSource, setDatasetSource] = useState("");
+  const [datasetPreview, setDatasetPreview] = useState<DatasetPreview | null>(null);
+  const [isUploadingDataset, setIsUploadingDataset] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [notice, setNotice] = useState("");
   const [executionResult, setExecutionResult] = useState<Awaited<
     ReturnType<typeof executeAnalysis>
   > | null>(null);
+  const updateAnalysisMutation = useUpdateAnalysis();
+
+  useEffect(() => {
+    if (!initialDefinition) return;
+
+    const operationNodes: Node<PipelineNodeData>[] = initialDefinition.operations.map(
+      (operation, index) => {
+        const option = operationOptions.find((item) => item.type === operation.type);
+        return {
+          id: operation.id,
+          type: "default",
+          position: { x: 260 + (index % 3) * 220, y: 100 + Math.floor(index / 3) * 150 },
+          data: {
+            label: option?.label ?? operation.type,
+            operationType: operation.type as OperationType,
+            parameters: operation.parameters,
+          },
+          style: {
+            width: 190, borderRadius: 12, border: "1px solid #cbd5e1",
+            background: "#ffffff", padding: 12, fontWeight: 500,
+          },
+        };
+      },
+    );
+    const incoming = new Set(initialDefinition.edges.map((edge) => edge.target));
+    const restoredEdges: Edge[] = [
+      ...initialDefinition.edges.map((edge) => ({
+        id: `${edge.source}-${edge.target}`, source: edge.source, target: edge.target,
+        animated: true, style: { stroke: "#64748b", strokeWidth: 1.5 },
+      })),
+      ...initialDefinition.operations
+        .filter((operation) => !incoming.has(operation.id))
+        .map((operation) => ({
+          id: `source-${operation.id}`, source: "source", target: operation.id,
+          animated: true, style: { stroke: "#64748b", strokeWidth: 1.5 },
+        })),
+    ];
+
+    setNodes([...initialNodes, ...operationNodes]);
+    setEdges(restoredEdges);
+    setDatasetName(initialDefinition.dataset.name);
+    setDatasetSource(
+      initialDefinition.dataset.source === "manual"
+        ? ""
+        : initialDefinition.dataset.source,
+    );
+    setSelectedNodeId(null);
+    setExecutionResult(null);
+    setNotice("");
+  }, [analysisId, initialDefinition, setEdges, setNodes]);
+
+  useEffect(() => {
+    if (!datasetSource || datasetSource === "manual") {
+      setDatasetPreview(null);
+      return;
+    }
+
+    let cancelled = false;
+    api.previewDataset(datasetSource)
+      .then((preview) => { if (!cancelled) setDatasetPreview(preview); })
+      .catch(() => { if (!cancelled) setDatasetPreview(null); });
+    return () => { cancelled = true; };
+  }, [datasetSource]);
+
+  async function handleDatasetUpload(file?: File) {
+    if (!file) return;
+    setIsUploadingDataset(true);
+    setNotice("");
+    try {
+      const uploaded = await api.uploadDataset(file);
+      if (!uploaded.source) throw new Error("The API did not return a dataset source.");
+      setDatasetName(file.name.replace(/\.(csv|parquet)$/i, ""));
+      setDatasetSource(uploaded.source);
+      setDatasetPreview(uploaded);
+      setNotice(`Dataset uploaded: ${uploaded.name} (${(uploaded.size_bytes ?? file.size).toLocaleString()} bytes).`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Unable to upload dataset.");
+    } finally {
+      setIsUploadingDataset(false);
+    }
+  }
 
   const selectedNode =
     nodes.find((node) => node.id === selectedNodeId) ?? null;
@@ -267,35 +355,44 @@ export default function WorkflowEditor({
         operationIds.has(edge.target),
     );
 
-    const hasIncomingEdge = new Set(
-      operationEdges.map((edge) => edge.target),
-    );
+    const adjacency = new Map<string, string[]>();
+    operationNodes.forEach((node) => adjacency.set(node.id, []));
+    operationEdges.forEach((edge) => {
+      adjacency.get(edge.source)?.push(edge.target);
+    });
 
-    const hasOutgoingEdge = new Set(
-      operationEdges.map((edge) => edge.source),
-    );
+    const sourceTargets = edges
+      .filter((edge) => edge.source === "source" && operationIds.has(edge.target))
+      .map((edge) => edge.target);
+    const visited = new Set<string>();
+    const queue = [...sourceTargets];
+    while (queue.length) {
+      const current = queue.shift()!;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      queue.push(...(adjacency.get(current) ?? []));
+    }
 
-    const connectedToSource = edges.some(
-      (edge) =>
-        edge.source === "source" &&
-        operationIds.has(edge.target),
-    );
+    if (visited.size !== operationNodes.length) {
+      setNotice("Connect every operation to the Dataset node. Remove isolated nodes before running.");
+      return false;
+    }
 
-    const allNodesConnected =
-      operationNodes.length === 1
-        ? connectedToSource ||
-          operationEdges.length === 0
-        : operationNodes.every(
-            (node) =>
-              hasIncomingEdge.has(node.id) ||
-              hasOutgoingEdge.has(node.id) ||
-              connectedToSource,
-          );
-
-    if (!allNodesConnected) {
-      setNotice(
-        "Check the pipeline connections. Some operations may be disconnected.",
-      );
+    const indegree = new Map(operationNodes.map((node) => [node.id, 0]));
+    operationEdges.forEach((edge) => indegree.set(edge.target, (indegree.get(edge.target) ?? 0) + 1));
+    const ready = [...indegree.entries()].filter(([, degree]) => degree === 0).map(([id]) => id);
+    let visitedCount = 0;
+    while (ready.length) {
+      const current = ready.shift()!;
+      visitedCount += 1;
+      for (const target of adjacency.get(current) ?? []) {
+        const degree = (indegree.get(target) ?? 0) - 1;
+        indegree.set(target, degree);
+        if (degree === 0) ready.push(target);
+      }
+    }
+    if (visitedCount !== operationNodes.length) {
+      setNotice("The pipeline contains a cycle. Remove a connection before running.");
       return false;
     }
 
@@ -315,8 +412,11 @@ export default function WorkflowEditor({
     );
 
     try {
-      const saved = await api.createAnalysis(analysis);
-      setNotice(`Draft saved successfully: ${saved.name}`);
+      const saved = await updateAnalysisMutation.mutateAsync({
+        id: analysisId,
+        definition: analysis,
+      });
+      setNotice(`Analysis saved successfully: ${saved.name}`);
     } catch (error) {
       setNotice(
         error instanceof Error ? error.message : "Unable to save the draft.",
@@ -654,23 +754,53 @@ export default function WorkflowEditor({
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="dataset-source"
-                  className="mb-1.5 block text-xs font-medium text-slate-600"
-                >
-                  Source
+              <div className="space-y-2">
+                <label htmlFor="dataset-file" className="block text-xs font-medium text-slate-600">
+                  Import a dataset
                 </label>
                 <input
-                  id="dataset-source"
-                  value={datasetSource}
-                  onChange={(event) => setDatasetSource(event.target.value)}
-                  placeholder="Path or source identifier"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  id="dataset-file"
+                  type="file"
+                  accept=".csv,.parquet,text/csv,application/vnd.apache.parquet"
+                  disabled={isUploadingDataset}
+                  onChange={(event) => {
+                    void handleDatasetUpload(event.target.files?.[0]);
+                    event.currentTarget.value = "";
+                  }}
+                  className="block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 disabled:opacity-60"
                 />
-                <p className="mt-1.5 text-xs leading-5 text-slate-500">
-                  Enter a source supported by the Dataflow backend.
+                <p className="text-xs leading-5 text-slate-500">
+                  CSV or Parquet · maximum 20 MB. The file is stored by the Dataflow API.
                 </p>
+                {isUploadingDataset && <p className="text-xs text-indigo-600">Uploading and checking file…</p>}
+                {datasetPreview && (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                      <CheckCircle2 size={14} className="text-emerald-600" />
+                      {datasetPreview.name}
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {datasetPreview.columns.length} columns · {datasetPreview.preview_row_count} preview rows
+                    </p>
+                    <div className="mt-2 max-h-40 overflow-auto rounded border border-slate-200 bg-white">
+                      <table className="min-w-full text-left text-[11px]">
+                        <thead className="sticky top-0 bg-slate-100">
+                          <tr>{datasetPreview.columns.map((column) => <th key={column.name} className="whitespace-nowrap px-2 py-1.5 font-semibold">{column.name}<span className="ml-1 font-normal text-slate-500">{column.dtype}</span></th>)}</tr>
+                        </thead>
+                        <tbody>
+                          {datasetPreview.rows.slice(0, 5).map((row, index) => (
+                            <tr key={index} className="border-t border-slate-100">
+                              {datasetPreview.columns.map((column) => <td key={column.name} className="max-w-32 truncate whitespace-nowrap px-2 py-1.5">{String(row[column.name] ?? "—")}</td>)}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                {!datasetPreview && datasetSource && datasetSource !== "manual" && (
+                  <p className="text-xs text-amber-700">Dataset preview unavailable. Re-import the file if it was moved or deleted.</p>
+                )}
               </div>
             </section>
 

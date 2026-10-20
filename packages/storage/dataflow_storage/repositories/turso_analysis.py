@@ -54,6 +54,44 @@ class TursoAnalysisRepository:
         return self.get_by_id(owner_id, analysis_id) # type: ignore[return-value]
     
 
+
+    def update(
+        self, owner_id: UUID, analysis_id: UUID, definition: dict[str, Any]
+    ) -> Optional[dict[str, Any]]:
+        """Atualiza uma análise existente pertencente ao usuário informado."""
+        dataset = definition["dataset"]
+        name = definition["name"]
+
+        with connect_database() as conn:
+            row = conn.execute(
+                "SELECT dataset_id FROM analyses WHERE id = ? AND owner_id = ?",
+                (str(analysis_id), str(owner_id)),
+            ).fetchone()
+
+            if row is None:
+                return None
+
+            dataset_id = row[0]
+            try:
+                conn.execute(
+                    "UPDATE datasets SET name = ?, source = ? WHERE id = ? AND owner_id = ?",
+                    (dataset["name"], dataset["source"], dataset_id, str(owner_id)),
+                )
+                conn.execute(
+                    """
+                    UPDATE analyses
+                    SET name = ?, definition_json = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ? AND owner_id = ?
+                    """,
+                    (name, json.dumps(definition, ensure_ascii=False), str(analysis_id), str(owner_id)),
+                )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+
+        return self.get_by_id(owner_id, analysis_id)
+
     def get_by_id(self, owner_id: UUID, analysis_id: UUID) -> Optional[dict[str, Any]]:
         with connect_database() as conn:
             row = conn.execute(
