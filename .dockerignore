@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# Python
+.venv
+**/.venv
+__pycache__
+**/__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov
+
+# Node / Bun
+node_modules
+**/node_modules
+dist
+**/dist
+
+# Envs
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# IDE
+.vscode
+.idea
+
+# Docker
+**/.dockerignore
+
+# Temporary files
+*.log
+.DS_Store
+**/*.log
