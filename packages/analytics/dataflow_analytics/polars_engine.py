@@ -4,11 +4,11 @@ import polars as pl
 from dataflow_domain import (
     Artifact,
     ArtifactType,
-    Operation,
-    GroupByOperation,
-    FilterOperation,
-    SortOperation,
     ConcatOperation,
+    FilterOperation,
+    GroupByOperation,
+    Operation,
+    SortOperation,
 )
 
 
@@ -18,7 +18,7 @@ class PolarsEngine:
     def execute(self, artifacts: tuple[Artifact, ...], operation: Operation) -> Artifact:
         """Aplica uma operação de análise a um artefato tabular."""
         if any(artifact.type != ArtifactType.TABLE for artifact in artifacts):
-            raise ValueError(f"Artifacts must be tables")
+            raise ValueError("Artifacts must be tables")
 
         if isinstance(operation, GroupByOperation):
             self._require_single_input(artifacts)
@@ -33,11 +33,10 @@ class PolarsEngine:
             return self._execute_sort(artifacts[0].data, operation)
         
         elif isinstance(operation, ConcatOperation):
-            self._require_single_input(artifacts)
             return self._execute_concat(artifacts)
         
         else:
-            raise ValueError(f"Unsupported operation: {operation.type}")
+            raise TypeError(f"Unsupported operation: {operation.type}")
 
     def _execute_group_by(self, dataframe: pl.DataFrame, operation: GroupByOperation) -> Artifact:
         """Agrupa e agrega uma tabela conforme a operação informada."""

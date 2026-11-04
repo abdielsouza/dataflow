@@ -1,22 +1,22 @@
 """Motor de execução da análise a partir de um grafo de operações."""
 
-from typing import Optional
 
-from dataflow_analytics import PolarsEngine, ChartEngine
+from dataflow_analytics import ChartEngine, PolarsEngine
 from dataflow_domain import (
     Analysis,
-    Execution,
-    ExecutionStatus,
     Artifact,
     ArtifactType,
     CreateChartOperation,
+    Execution,
+    ExecutionStatus,
     Operation,
-    OperationNode,
 )
 from dataflow_storage import DatasetLoader
-from .planner import ExecutionPlanner
+from hyperway import Unit
+
 # from .context import ExecutionContext
-from .executors import SequentialStageExecutor, ExecutionStrategy
+from .executors import ExecutionStrategy, SequentialStageExecutor
+from .planner import ExecutionPlanner, HyperwayExecutionGraph
 
 
 class ExecutionEngine:
@@ -24,10 +24,10 @@ class ExecutionEngine:
 
     def __init__(
         self,
-        dataset_loader: Optional[DatasetLoader] = None,
-        analytics_engine: Optional[PolarsEngine] = None,
-        chart_engine: Optional[ChartEngine] = None,
-        strategy: Optional[ExecutionStrategy] = None,
+        dataset_loader: DatasetLoader | None = None,
+        analytics_engine: PolarsEngine | None = None,
+        chart_engine: ChartEngine | None = None,
+        strategy: ExecutionStrategy | None = None,
     ) -> None:
         """Inicializa dependências de carregamento, análise e renderização de gráficos."""
         self._dataset_loader = dataset_loader or DatasetLoader()
@@ -50,15 +50,11 @@ class ExecutionEngine:
                 data=dataframe,
             )
 
-            plan = self._planner.plan(analysis.graph)
+            execution_graph = self._planner.build(analysis, self._execute_operation)
+            stages = self._planner.plan_stages(execution_graph)
 
-            for node in plan:
-                predecessors = analysis.graph.predecessors(node)
-
-                inputs = self._resolve_inputs(execution, initial_artifact, predecessors)
-                artifact = self._execute_operation(node.operation, inputs)
-
-                execution.artifacts_by_node[node.id] = artifact
+            for stage in stages:
+                self._execute_stage(execution, initial_artifact, execution_graph, stage)
 
             execution.status = ExecutionStatus.COMPLETED
 
@@ -80,32 +76,29 @@ class ExecutionEngine:
 
         return self._analytics_engine.execute(inputs, operation)
 
-    def _resolve_inputs(
-        self,
-        execution: Execution,
-        initial_artifact: Artifact,
-        predecessors: tuple[OperationNode, ...],
-    ) -> tuple[Artifact, ...]:
-        """Obtém o artefato produzido pelo predecessor único da operação atual."""
-        if not predecessors:
-            return tuple([initial_artifact])
-
-        return tuple(execution.artifacts_by_node[node.id] for node in predecessors)
-
     def _execute_stage(
         self,
         execution: Execution,
         initial_artifact: Artifact,
-        nodes: tuple[OperationNode, ...],
+        execution_graph: HyperwayExecutionGraph,
+        nodes: tuple[Unit, ...],
     ) -> None:
         """Executa um estágio completo de nós e persiste os artefatos resultantes."""
 
-        def execute_node(node: OperationNode) -> Artifact:
-            """Resolve os dados de entrada para um nó e executa a operação correspondente."""
-            inputs = self._resolve_inputs(execution, initial_artifact, tuple([node]))
-            return self._execute_operation(node.operation, inputs)
+        def execute_node(unit: Unit) -> Artifact:
+            """Resolve upstream artifacts and runs the operation attached to a unit."""
+            inputs = tuple(
+                initial_artifact
+                if connection.a is execution_graph.source
+                else execution.artifacts_by_node[
+                    execution_graph.operation_nodes[connection.a].id
+                ]
+                for connection in unit.get_inbound_connections(execution_graph.graph) or ()
+            )
+            return unit.func(*inputs)
 
         results = self._strategy.execute(nodes, execute_node)
 
-        for node, artifact in results.items():
-            execution.artifacts_by_node[node.id] = artifact
+        for unit, artifact in results.items():
+            operation_node = execution_graph.operation_nodes[unit]
+            execution.artifacts_by_node[operation_node.id] = artifact

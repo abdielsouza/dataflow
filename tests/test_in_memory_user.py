@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 import pytest
-
 from dataflow_domain import User
 from dataflow_infrastructure import InMemoryUserRepository
 

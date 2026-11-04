@@ -1,5 +1,4 @@
 import polars as pl
-
 from dataflow_analytics import PolarsEngine
 from dataflow_domain import Artifact, ArtifactType, FilterOperation, GroupByOperation, SortOperation
 

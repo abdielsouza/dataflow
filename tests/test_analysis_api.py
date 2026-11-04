@@ -1,8 +1,7 @@
-from uuid import uuid4
 from typing import cast
+from uuid import uuid4
 
 import pytest
-
 from dataflow_api.schemas import (
     AnalysisRequest,
     DatasetRequest,

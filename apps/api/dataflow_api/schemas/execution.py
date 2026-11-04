@@ -1,8 +1,8 @@
-from pydantic import BaseModel
 from uuid import UUID
-from typing import Optional
 
-from dataflow_domain import ExecutionStatus, Analysis, Execution
+from dataflow_domain import Analysis, Execution, ExecutionStatus
+from pydantic import BaseModel
+
 from .analysis import AnalysisRequest
 
 
@@ -22,7 +22,7 @@ class ExecutionResponse(BaseModel):
     id:             UUID
     analysis_id:    UUID
     status:         ExecutionStatus
-    error:          Optional[str]
+    error:          str | None
 
     @classmethod
     def from_domain(cls, execution: Execution) -> ExecutionResponse:

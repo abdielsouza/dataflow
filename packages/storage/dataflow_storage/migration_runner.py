@@ -2,7 +2,6 @@ from pathlib import Path
 
 from .connection import connect_database
 
-
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 
 

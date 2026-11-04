@@ -1,9 +1,10 @@
 from pathlib import Path
 
 import pytest
-from fastapi import HTTPException
-
+from dataflow_api.main import create_app
 from dataflow_api.routers.datasets import _owned_source
+from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
 
 def test_dataset_source_is_limited_to_own_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -30,3 +31,21 @@ def test_dataset_source_rejects_unsupported_extension(tmp_path: Path, monkeypatc
     with pytest.raises(HTTPException) as exc:
         _owned_source(str(dataset), "user-1")
     assert exc.value.status_code == 422
+
+
+def test_dataset_upload_cors_allows_filename_header(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATAFLOW_CORS_ORIGINS", "http://localhost:5173")
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/datasets/upload",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization,content-type,x-filename",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "x-filename" in response.headers["access-control-allow-headers"].lower()

@@ -1,6 +1,6 @@
 """Serviço de aplicação para orquestrar execuções de análise."""
 
-from dataflow_domain import Execution, Analysis
+from dataflow_domain import Analysis, Execution
 from dataflow_execution import ExecutionEngine
 
 

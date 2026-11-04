@@ -1,5 +1,4 @@
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
 
 from .base import ExecutionStrategy
 
@@ -7,7 +6,7 @@ from .base import ExecutionStrategy
 class ConcurrentStageExecutor(ExecutionStrategy):
     """Executa um estágio de operações em paralelo usando threads."""
 
-    def __init__(self, max_workers: Optional[int] = None) -> None:
+    def __init__(self, max_workers: int | None = None) -> None:
         """Configura o número máximo de workers usados em paralelo."""
         self._max_workers = max_workers or 2
 

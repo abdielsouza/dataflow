@@ -1,21 +1,17 @@
 """Dependências compartilhadas da API de execução."""
-lazy import os
-lazy import dotenv
-
-from typing import Optional
 from functools import lru_cache
+lazy import os
 
+from dataflow_domain import User, UserRepository
+from dataflow_execution import ExecutionEngine
+from dataflow_storage import TursoAnalysisRepository, TursoUserRepository
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError
+lazy import dotenv
 
-from .services import *
 from .security import *
-
-from dataflow_execution import ExecutionEngine
-from dataflow_domain import User, UserRepository
-from dataflow_storage import TursoUserRepository, TursoAnalysisRepository
-
+from .services import *
 
 _password_handler = PasswordHandler()
 _bearer_scheme = HTTPBearer(auto_error=False)
@@ -56,7 +52,7 @@ def get_auth_service() -> AuthService:
 
 
 def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
     token_handler: TokenHandler = Depends(get_token_handler),
     user_repo: UserRepository = Depends(get_user_repository)
 ) -> User:

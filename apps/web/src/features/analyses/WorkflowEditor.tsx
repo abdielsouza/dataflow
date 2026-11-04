@@ -135,26 +135,76 @@ const initialNodes: Node<PipelineNodeData>[] = [
 
 const initialEdges: Edge[] = [];
 
+function createInitialGraph(initialDefinition?: AnalysisDefinition) {
+  if (!initialDefinition) return { nodes: initialNodes, edges: initialEdges };
+
+  const operationNodes: Node<PipelineNodeData>[] = initialDefinition.operations.map(
+    (operation, index) => {
+      const option = operationOptions.find((item) => item.type === operation.type);
+      return {
+        id: operation.id,
+        type: "default",
+        position: { x: 260 + (index % 3) * 220, y: 100 + Math.floor(index / 3) * 150 },
+        data: {
+          label: option?.label ?? operation.type,
+          operationType: operation.type as OperationType,
+          parameters: operation.parameters,
+        },
+        style: {
+          width: 190, borderRadius: 12, border: "1px solid #cbd5e1",
+          background: "#ffffff", padding: 12, fontWeight: 500,
+        },
+      };
+    },
+  );
+  const incoming = new Set(initialDefinition.edges.map((edge) => edge.target));
+  const edges: Edge[] = [
+    ...initialDefinition.edges.map((edge) => ({
+      id: `${edge.source}-${edge.target}`, source: edge.source, target: edge.target,
+      animated: true, style: { stroke: "#64748b", strokeWidth: 1.5 },
+    })),
+    ...initialDefinition.operations
+      .filter((operation) => !incoming.has(operation.id))
+      .map((operation) => ({
+        id: `source-${operation.id}`, source: "source", target: operation.id,
+        animated: true, style: { stroke: "#64748b", strokeWidth: 1.5 },
+      })),
+  ];
+
+  return { nodes: [...initialNodes, ...operationNodes], edges };
+}
+
 export default function WorkflowEditor({
   analysisId,
   analysisName,
   initialDefinition,
   onBack,
 }: WorkflowEditorProps) {
+  const [initialGraph] = useState(() => createInitialGraph(initialDefinition));
   const [nodes, setNodes, onNodesChange] =
-    useNodesState<Node<PipelineNodeData>>(initialNodes);
+    useNodesState<Node<PipelineNodeData>>(initialGraph.nodes);
 
   const [edges, setEdges, onEdgesChange] =
-    useEdgesState<Edge>(initialEdges);
+    useEdgesState<Edge>(initialGraph.edges);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(
     null,
   );
   const [showOperations, setShowOperations] = useState(true);
   const [showSettings, setShowSettings] = useState(true);
-  const [datasetName, setDatasetName] = useState("My dataset");
-  const [datasetSource, setDatasetSource] = useState("");
-  const [datasetPreview, setDatasetPreview] = useState<DatasetPreview | null>(null);
+  const [datasetName, setDatasetName] = useState(
+    () => initialDefinition?.dataset.name ?? "My dataset",
+  );
+  const [datasetSource, setDatasetSource] = useState(() => {
+    const source = initialDefinition?.dataset.source;
+    return source && source !== "manual" ? source : "";
+  });
+  const [datasetPreview, setDatasetPreview] = useState<{
+    source: string;
+    data: DatasetPreview;
+  } | null>(null);
+  const visibleDatasetPreview =
+    datasetPreview?.source === datasetSource ? datasetPreview.data : null;
   const [isUploadingDataset, setIsUploadingDataset] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [notice, setNotice] = useState("");
@@ -164,63 +214,13 @@ export default function WorkflowEditor({
   const updateAnalysisMutation = useUpdateAnalysis();
 
   useEffect(() => {
-    if (!initialDefinition) return;
-
-    const operationNodes: Node<PipelineNodeData>[] = initialDefinition.operations.map(
-      (operation, index) => {
-        const option = operationOptions.find((item) => item.type === operation.type);
-        return {
-          id: operation.id,
-          type: "default",
-          position: { x: 260 + (index % 3) * 220, y: 100 + Math.floor(index / 3) * 150 },
-          data: {
-            label: option?.label ?? operation.type,
-            operationType: operation.type as OperationType,
-            parameters: operation.parameters,
-          },
-          style: {
-            width: 190, borderRadius: 12, border: "1px solid #cbd5e1",
-            background: "#ffffff", padding: 12, fontWeight: 500,
-          },
-        };
-      },
-    );
-    const incoming = new Set(initialDefinition.edges.map((edge) => edge.target));
-    const restoredEdges: Edge[] = [
-      ...initialDefinition.edges.map((edge) => ({
-        id: `${edge.source}-${edge.target}`, source: edge.source, target: edge.target,
-        animated: true, style: { stroke: "#64748b", strokeWidth: 1.5 },
-      })),
-      ...initialDefinition.operations
-        .filter((operation) => !incoming.has(operation.id))
-        .map((operation) => ({
-          id: `source-${operation.id}`, source: "source", target: operation.id,
-          animated: true, style: { stroke: "#64748b", strokeWidth: 1.5 },
-        })),
-    ];
-
-    setNodes([...initialNodes, ...operationNodes]);
-    setEdges(restoredEdges);
-    setDatasetName(initialDefinition.dataset.name);
-    setDatasetSource(
-      initialDefinition.dataset.source === "manual"
-        ? ""
-        : initialDefinition.dataset.source,
-    );
-    setSelectedNodeId(null);
-    setExecutionResult(null);
-    setNotice("");
-  }, [analysisId, initialDefinition, setEdges, setNodes]);
-
-  useEffect(() => {
-    if (!datasetSource || datasetSource === "manual") {
-      setDatasetPreview(null);
-      return;
-    }
+    if (!datasetSource || datasetSource === "manual") return;
 
     let cancelled = false;
     api.previewDataset(datasetSource)
-      .then((preview) => { if (!cancelled) setDatasetPreview(preview); })
+      .then((preview) => {
+        if (!cancelled) setDatasetPreview({ source: datasetSource, data: preview });
+      })
       .catch(() => { if (!cancelled) setDatasetPreview(null); });
     return () => { cancelled = true; };
   }, [datasetSource]);
@@ -234,7 +234,7 @@ export default function WorkflowEditor({
       if (!uploaded.source) throw new Error("The API did not return a dataset source.");
       setDatasetName(file.name.replace(/\.(csv|parquet)$/i, ""));
       setDatasetSource(uploaded.source);
-      setDatasetPreview(uploaded);
+      setDatasetPreview({ source: uploaded.source, data: uploaded });
       setNotice(`Dataset uploaded: ${uploaded.name} (${(uploaded.size_bytes ?? file.size).toLocaleString()} bytes).`);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Unable to upload dataset.");
@@ -773,24 +773,24 @@ export default function WorkflowEditor({
                   CSV or Parquet · maximum 20 MB. The file is stored by the Dataflow API.
                 </p>
                 {isUploadingDataset && <p className="text-xs text-indigo-600">Uploading and checking file…</p>}
-                {datasetPreview && (
+                {visibleDatasetPreview && (
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
                       <CheckCircle2 size={14} className="text-emerald-600" />
-                      {datasetPreview.name}
+                      {visibleDatasetPreview.name}
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      {datasetPreview.columns.length} columns · {datasetPreview.preview_row_count} preview rows
+                      {visibleDatasetPreview.columns.length} columns · {visibleDatasetPreview.preview_row_count} preview rows
                     </p>
                     <div className="mt-2 max-h-40 overflow-auto rounded border border-slate-200 bg-white">
                       <table className="min-w-full text-left text-[11px]">
                         <thead className="sticky top-0 bg-slate-100">
-                          <tr>{datasetPreview.columns.map((column) => <th key={column.name} className="whitespace-nowrap px-2 py-1.5 font-semibold">{column.name}<span className="ml-1 font-normal text-slate-500">{column.dtype}</span></th>)}</tr>
+                          <tr>{visibleDatasetPreview.columns.map((column) => <th key={column.name} className="whitespace-nowrap px-2 py-1.5 font-semibold">{column.name}<span className="ml-1 font-normal text-slate-500">{column.dtype}</span></th>)}</tr>
                         </thead>
                         <tbody>
-                          {datasetPreview.rows.slice(0, 5).map((row, index) => (
+                          {visibleDatasetPreview.rows.slice(0, 5).map((row, index) => (
                             <tr key={index} className="border-t border-slate-100">
-                              {datasetPreview.columns.map((column) => <td key={column.name} className="max-w-32 truncate whitespace-nowrap px-2 py-1.5">{String(row[column.name] ?? "—")}</td>)}
+                              {visibleDatasetPreview.columns.map((column) => <td key={column.name} className="max-w-32 truncate whitespace-nowrap px-2 py-1.5">{String(row[column.name] ?? "—")}</td>)}
                             </tr>
                           ))}
                         </tbody>
@@ -798,7 +798,7 @@ export default function WorkflowEditor({
                     </div>
                   </div>
                 )}
-                {!datasetPreview && datasetSource && datasetSource !== "manual" && (
+                {!visibleDatasetPreview && datasetSource && datasetSource !== "manual" && (
                   <p className="text-xs text-amber-700">Dataset preview unavailable. Re-import the file if it was moved or deleted.</p>
                 )}
               </div>

@@ -1,6 +1,5 @@
-import pytest
 import polars as pl
-
+import pytest
 from dataflow_analytics import PlotlyRenderer
 from dataflow_domain import Artifact, ArtifactType, ChartSpec, ChartType
 

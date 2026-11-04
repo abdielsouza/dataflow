@@ -1,7 +1,8 @@
-from collections.abc import Callable
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 
-from dataflow_domain import OperationNode, Artifact
+from dataflow_domain import Artifact
+from hyperway import Unit
 
 
 class ExecutionStrategy(ABC):
@@ -10,8 +11,8 @@ class ExecutionStrategy(ABC):
     @abstractmethod
     def execute(
         self,
-        nodes: tuple[OperationNode, ...],
-        execute_node: Callable[[OperationNode], Artifact]
-    ) -> dict[OperationNode, Artifact]:
+        nodes: tuple[Unit, ...],
+        execute_node: Callable[[Unit], Artifact],
+    ) -> dict[Unit, Artifact]:
         """Executa um conjunto de nós e retorna os artefatos produzidos."""
         ...

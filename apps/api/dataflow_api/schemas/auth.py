@@ -1,7 +1,7 @@
-from pydantic import BaseModel
 from uuid import UUID
 
 from dataflow_domain import User
+from pydantic import BaseModel
 
 
 class RegisterRequest(BaseModel):

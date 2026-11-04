@@ -1,42 +1,101 @@
-"""Planejamento da ordem de execução de operações em um grafo."""
+"""Build and plan Dataflow execution graphs using Hyperway."""
 
-from dataflow_domain import OperationNode, OperationGraph
+from collections.abc import Callable
+from dataclasses import dataclass
+from uuid import UUID
+
+from dataflow_domain import Analysis, Artifact, Operation, OperationNode
+from hyperway import Graph, Unit
+
+
+@dataclass(frozen=True)
+class HyperwayExecutionGraph:
+    graph: Graph
+    source: Unit
+    units: tuple[Unit, ...]
+    operation_nodes: dict[Unit, OperationNode]
 
 
 class ExecutionPlanner:
-    """Ordena os nós do grafo em uma sequência executável usando topological sort."""
+    """Translate domain analyses to Hyperway and order their execution stages."""
 
-    def plan(self, graph: OperationGraph) -> tuple[OperationNode, ...]:
-        """Retorna a sequência topológica das operações do grafo."""
-        return tuple(node for stage in self._plan_stages(graph) for node in stage)
+    def build(
+        self,
+        analysis: Analysis,
+        execute_operation: Callable[[Operation, tuple[Artifact, ...]], Artifact],
+    ) -> HyperwayExecutionGraph:
+        """Create Hyperway units and connections for an analysis."""
+        graph = Graph()
+        source = Unit(lambda artifact: artifact, name="dataset")
+        units_by_id: dict[UUID, Unit] = {}
+        operation_nodes: dict[Unit, OperationNode] = {}
 
-    def _plan_stages(self, graph: OperationGraph) -> tuple[tuple[OperationNode, ...], ...]:
-        nodes = graph.nodes
-        
-        in_degree = {node.id: len(graph.predecessors(node)) for node in nodes}
-        ready = [node for node in nodes if in_degree[node.id] == 0]
+        for node in analysis.graph.nodes:
+            unit = Unit(
+                lambda *inputs, operation=node.operation: execute_operation(
+                    operation,
+                    tuple(inputs),
+                ),
+                name=f"operation-{node.id}",
+            )
+            units_by_id[node.id] = unit
+            operation_nodes[unit] = node
 
-        processed: set = set()
-        stages: list[tuple[OperationNode, ...]] = []
+        incoming_ids = {edge.target for edge in analysis.graph.edges}
+        for edge in analysis.graph.edges:
+            graph.add(units_by_id[edge.source], units_by_id[edge.target])
+
+        for node in analysis.graph.nodes:
+            if node.id not in incoming_ids:
+                graph.add(source, units_by_id[node.id])
+
+        return HyperwayExecutionGraph(
+            graph=graph,
+            source=source,
+            units=tuple(operation_nodes),
+            operation_nodes=operation_nodes,
+        )
+
+    def plan(self, execution_graph: HyperwayExecutionGraph) -> tuple[Unit, ...]:
+        """Return Hyperway units in topological order."""
+        return tuple(unit for stage in self.plan_stages(execution_graph) for unit in stage)
+
+    def plan_stages(
+        self,
+        execution_graph: HyperwayExecutionGraph,
+    ) -> tuple[tuple[Unit, ...], ...]:
+        """Return batches of Hyperway units whose dependencies are satisfied."""
+        units = (execution_graph.source, *execution_graph.units)
+        graph = execution_graph.graph
+        in_degree = {
+            unit: len(unit.get_inbound_connections(graph) or ())
+            for unit in units
+        }
+        ready = [unit for unit in units if in_degree[unit] == 0]
+
+        processed: set[Unit] = set()
+        stages: list[tuple[Unit, ...]] = []
 
         while ready:
             current_stage = tuple(ready)
-            stages.append(current_stage)
+            operation_stage = tuple(
+                unit for unit in current_stage if unit is not execution_graph.source
+            )
+            if operation_stage:
+                stages.append(operation_stage)
 
-            for node in current_stage:
-                processed.add(node.id)
+            for unit in current_stage:
+                processed.add(unit)
 
-                for successor in graph.successors(node):
-                    in_degree[successor.id] -= 1
+                for connection in unit.get_outbound_connections(graph) or ():
+                    in_degree[connection.b] -= 1
 
             ready = [
-                node for node in nodes
-                if (node.id not in processed and in_degree[node.id] == 0)
+                unit for unit in units
+                if unit not in processed and in_degree[unit] == 0
             ]
 
-        processed_nodes = sum(len(stage) for stage in stages)
-
-        if processed_nodes != len(nodes):
-            raise ValueError("Operation graph contains a cycle.")
+        if len(processed) != len(units):
+            raise ValueError("Execution graph contains a cycle.")
 
         return tuple(stages)

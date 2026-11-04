@@ -1,5 +1,4 @@
 from uuid import UUID
-from typing import Optional
 
 from dataflow_domain import User
 
@@ -9,10 +8,10 @@ class InMemoryUserRepository:
         self._users_by_id: dict[UUID, User] = {}
         self._user_ids_by_email: dict[str, UUID] = {}
 
-    def get_by_id(self, user_id: UUID) -> Optional[User]:
+    def get_by_id(self, user_id: UUID) -> User | None:
         return self._users_by_id.get(user_id)
 
-    def get_by_email(self, email: str) -> Optional[User]:
+    def get_by_email(self, email: str) -> User | None:
         user_id = self._user_ids_by_email.get(email)
 
         return None if user_id is None else self._users_by_id[user_id]

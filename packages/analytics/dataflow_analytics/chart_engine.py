@@ -1,12 +1,11 @@
 """Módulo responsável por encapsular especificações de gráficos em artefatos."""
 
+import polars as pl
 from dataflow_domain import (
     Artifact,
     ArtifactType,
     ChartSpec,
 )
-
-import polars as pl
 
 
 class ChartEngine:

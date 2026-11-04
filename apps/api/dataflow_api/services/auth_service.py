@@ -1,4 +1,5 @@
-from dataflow_domain import UserRepository, User
+from dataflow_domain import User, UserRepository
+
 from ..security import PasswordHandler
 
 

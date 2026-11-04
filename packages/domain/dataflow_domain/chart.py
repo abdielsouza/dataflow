@@ -1,7 +1,6 @@
 """Especificações de gráficos usadas na criação de artefatos visuais."""
 
 from dataclasses import dataclass
-from typing import Optional
 from enum import StrEnum
 
 
@@ -21,4 +20,4 @@ class ChartSpec:
     type: ChartType
     x: str
     y: str
-    title: Optional[str] = None
+    title: str | None = None

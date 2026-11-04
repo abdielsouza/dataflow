@@ -3,11 +3,11 @@
 import json
 from typing import Any, cast
 
-import polars as pl
 import plotly.graph_objects as go
 import plotly.io as pio
-
+import polars as pl
 from dataflow_domain import Artifact, ArtifactType, ChartSpec, ChartType
+
 from ..models import *
 
 

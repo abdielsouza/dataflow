@@ -1,4 +1,9 @@
-from dataflow_analytics import RenderedArtifact, RenderedArtifactSerializer, RenderedArtifactType, RendererType
+from dataflow_analytics import (
+    RenderedArtifact,
+    RenderedArtifactSerializer,
+    RenderedArtifactType,
+    RendererType,
+)
 
 
 def test_serialize_rendered_artifact() -> None:

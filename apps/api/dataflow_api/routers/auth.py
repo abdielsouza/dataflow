@@ -1,15 +1,15 @@
 from fastapi import Depends, HTTPException
 
-from ..services import AuthService
-from ..security import TokenHandler
+from ..dependencies import get_auth_service, get_token_handler
 from ..schemas import (
     LoginRequest,
     RegisterRequest,
-    UserResponse,
     TokenResponse,
+    UserResponse,
 )
+from ..security import TokenHandler
+from ..services import AuthService
 from .base import AbstractRouter
-from ..dependencies import get_auth_service, get_token_handler
 
 
 class AuthRouter(AbstractRouter):

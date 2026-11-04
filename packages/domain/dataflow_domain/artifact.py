@@ -1,9 +1,9 @@
 """Artefatos produzidos e consumidos durante a execução da análise."""
 
 from dataclasses import dataclass, field
-from uuid import UUID, uuid4
 from enum import StrEnum
 from typing import Any
+from uuid import UUID, uuid4
 
 
 class ArtifactType(StrEnum):

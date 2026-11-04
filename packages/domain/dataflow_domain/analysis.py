@@ -3,9 +3,9 @@
 from dataclasses import dataclass, field
 from uuid import UUID, uuid4
 
-from .operation import Operation
 from .dataset import Dataset
 from .graph import OperationGraph, OperationNode
+from .operation import Operation
 
 
 @dataclass

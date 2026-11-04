@@ -6,10 +6,11 @@ export const analysisKeys = {
 	detail: (id: string) => ["analyses", id] as const,
 };
 
-export function useAnalyses() {
+export function useAnalyses(enabled = true) {
 	return useQuery({
 		queryKey: analysisKeys.all,
 		queryFn: api.listAnalyses,
+		enabled,
 		retry: false,
 	});
 }

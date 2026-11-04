@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import jwt
@@ -14,7 +14,7 @@ class TokenHandler:
 
 
     def create_access_token(self, user_id: UUID) -> str:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         payload = {
             "sub": str(user_id),

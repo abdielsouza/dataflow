@@ -71,7 +71,7 @@ export default function App() {
   const [openedAnalysis, setOpenedAnalysis] = useState<Analysis | null>(null);
   const [authenticated, setAuthenticated] = useState(() => Boolean(getAccessToken()));
 
-  const { data: analysesFromApi = [], isLoading, isError, error } = useAnalyses();
+  const { data: analysesFromApi = [], isLoading, isError, error } = useAnalyses(authenticated);
   const createAnalysisMutation = useCreateAnalysis();
   const { data: openedAnalysisDetail, isLoading: isOpenedAnalysisLoading, error: openedAnalysisError } =
     useAnalysis(openedAnalysis?.id);

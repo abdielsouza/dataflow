@@ -1,15 +1,15 @@
 """Operações concretas do domínio aplicáveis em fluxos de análise."""
 
-from .group_by import GroupByOperation
-from .filter import FilterOperation
-from .sort import SortOperation
 from .chart import CreateChartOperation
 from .concat import ConcatOperation
+from .filter import FilterOperation
+from .group_by import GroupByOperation
+from .sort import SortOperation
 
 __all__ = [
-    "GroupByOperation",
-    "FilterOperation",
-    "SortOperation",
-    "CreateChartOperation",
     "ConcatOperation",
+    "CreateChartOperation",
+    "FilterOperation",
+    "GroupByOperation",
+    "SortOperation",
 ]

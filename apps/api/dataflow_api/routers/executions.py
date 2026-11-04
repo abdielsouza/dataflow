@@ -1,14 +1,13 @@
 """Endpoints de execução de análises via API HTTP."""
 
+from dataflow_domain import User
 from fastapi import Depends
 
-from .base import AbstractRouter
-from ..schemas import ExecutionResponse, ExecutionRequest
+from ..dependencies import get_current_user, get_execution_service
+from ..schemas import ExecutionRequest, ExecutionResponse
 from ..services import ExecutionService
-from ..dependencies import get_execution_service, get_current_user
+from .base import AbstractRouter
 from .datasets import _owned_source
-
-from dataflow_domain import User
 
 
 class ExecutionRouter(AbstractRouter):

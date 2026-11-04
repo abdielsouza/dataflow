@@ -8,7 +8,7 @@ class TursoConfig:
     auth_token: str
 
     @classmethod
-    def from_env(cls) -> "TursoConfig":
+    def from_env(cls) -> TursoConfig:
         database_url = os.getenv("TURSO_DATABASE_URL")
         auth_token = os.getenv("TURSO_AUTH_TOKEN")
 

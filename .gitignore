@@ -17,3 +17,5 @@ __pycache__
 
 # Specific files
 tests/conftest.py
+*.log
+**/*.log

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from ..connection import connect_database
@@ -57,7 +57,7 @@ class TursoAnalysisRepository:
 
     def update(
         self, owner_id: UUID, analysis_id: UUID, definition: dict[str, Any]
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Atualiza uma análise existente pertencente ao usuário informado."""
         dataset = definition["dataset"]
         name = definition["name"]
@@ -92,7 +92,7 @@ class TursoAnalysisRepository:
 
         return self.get_by_id(owner_id, analysis_id)
 
-    def get_by_id(self, owner_id: UUID, analysis_id: UUID) -> Optional[dict[str, Any]]:
+    def get_by_id(self, owner_id: UUID, analysis_id: UUID) -> dict[str, Any] | None:
         with connect_database() as conn:
             row = conn.execute(
                 """

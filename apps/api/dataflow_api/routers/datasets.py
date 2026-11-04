@@ -6,12 +6,12 @@ from urllib.parse import unquote
 from uuid import uuid4
 
 import polars as pl
+from dataflow_domain import User
 from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel
 
-from dataflow_domain import User
-from .base import AbstractRouter
 from ..dependencies import get_current_user
+from .base import AbstractRouter
 
 MAX_DATASET_BYTES = 20 * 1024 * 1024
 ALLOWED_SUFFIXES = {".csv", ".parquet"}

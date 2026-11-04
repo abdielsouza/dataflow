@@ -1,17 +1,16 @@
 from uuid import UUID
 
-from fastapi import Depends, HTTPException
-
 from dataflow_domain import User
 from dataflow_storage import TursoAnalysisRepository
+from fastapi import Depends, HTTPException
 
-from .base import AbstractRouter
 from ..dependencies import get_analysis_repository, get_current_user
 from ..schemas import (
-    AnalysisRequest,
     AnalysisListItem,
+    AnalysisRequest,
     SavedAnalysisResponse,
 )
+from .base import AbstractRouter
 
 
 class AnalysisRouter(AbstractRouter):

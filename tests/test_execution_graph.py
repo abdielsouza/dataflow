@@ -2,12 +2,19 @@ from uuid import uuid4
 
 import polars as pl
 import pytest
-from jwt import InvalidTokenError
-
 from dataflow_analytics import PolarsEngine
 from dataflow_api.security import PasswordHandler, TokenHandler
-from dataflow_domain import Analysis, Artifact, ArtifactType, Dataset, FilterOperation, SortOperation
+from dataflow_domain import (
+    Analysis,
+    Artifact,
+    ArtifactType,
+    Dataset,
+    FilterOperation,
+    SortOperation,
+)
 from dataflow_execution import ExecutionPlanner
+from hyperway import Graph, Unit
+from jwt import InvalidTokenError
 
 
 def test_execution_planner_orders_graph_stages() -> None:
@@ -16,9 +23,30 @@ def test_execution_planner_orders_graph_stages() -> None:
     sort_node = analysis.add_operation(SortOperation(columns=("vendas",), descending=True))
     analysis.graph.add_edge(filter_node, sort_node)
 
-    planned = ExecutionPlanner().plan(analysis.graph)
+    planner = ExecutionPlanner()
+    execution_graph = planner.build(analysis, lambda operation, inputs: inputs[0])
+    planned = planner.plan(execution_graph)
 
-    assert planned == (filter_node, sort_node)
+    assert isinstance(execution_graph.graph, Graph)
+    assert all(isinstance(unit, Unit) for unit in planned)
+    assert tuple(execution_graph.operation_nodes[unit] for unit in planned) == (
+        filter_node,
+        sort_node,
+    )
+
+
+def test_execution_planner_rejects_cycles_in_hyperway_graph() -> None:
+    analysis = Analysis(name="Análise", dataset=Dataset(name="Dados", source="dados.csv"))
+    first = analysis.add_operation(FilterOperation(column="estado", operator="==", value="MG"))
+    second = analysis.add_operation(SortOperation(columns=("vendas",), descending=True))
+    analysis.graph.add_edge(first, second)
+    analysis.graph.add_edge(second, first)
+
+    planner = ExecutionPlanner()
+    execution_graph = planner.build(analysis, lambda operation, inputs: inputs[0])
+
+    with pytest.raises(ValueError, match="Execution graph contains a cycle"):
+        planner.plan_stages(execution_graph)
 
 
 def test_password_handler_validates_hashes() -> None:

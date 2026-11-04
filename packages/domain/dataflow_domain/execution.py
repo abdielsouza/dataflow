@@ -3,7 +3,6 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
 from uuid import UUID, uuid4
-from typing import Optional
 
 from .artifact import Artifact
 
@@ -25,7 +24,7 @@ class Execution:
     id: UUID = field(default_factory=uuid4)
     status: ExecutionStatus = ExecutionStatus.PENDING
     artifacts_by_node: dict[UUID, Artifact] = field(default_factory=dict)
-    error: Optional[str] = None
+    error: str | None = None
 
     @property
     def artifacts(self) -> tuple[Artifact, ...]:

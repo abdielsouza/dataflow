@@ -21,6 +21,7 @@ O projeto está estruturado em múltiplos pacotes Python, o que facilita a separ
 - React 19 + Vite + TypeScript para a interface web
 - Tailwind CSS para estilização
 - Polars para processamento analítico
+- Hyperway para representação e planejamento dos grafos de execução
 - Plotly para renderização de gráficos
 - JWT para autenticação
 - Turso Serverless para armazenamento persistente
@@ -135,6 +136,7 @@ cd apps/web
 npm run dev
 npm run build
 npm run lint
+npm test
 npm run preview
 ```
 
@@ -163,13 +165,13 @@ O projeto segue uma separação em camadas:
 
 - camada de domínio: modelos e regras de negócio em `packages/domain`;
 - camada de analytics: motores de processamento e renderização em `packages/analytics`;
-- camada de execução: orquestração e planejamento do pipeline em `packages/execution`;
+- camada de execução: converte as operações do domínio em `hyperway.Graph` e `Unit`, planeja estágios pelas conexões Hyperway e executa operações em `packages/execution`;
 - camada de armazenamento: integração com banco e repositórios em `packages/storage`;
 - camada de infraestrutura: suporte de persistência e serviços de infraestrutura em `packages/infrastructure`;
 - camada de API: endpoints em `apps/api/dataflow_api`;
 - camada de interface: app em React em `apps/web/src`.
 
-A API expõe rotas de autenticação e análises, enquanto o frontend consome esses endpoints para criar, listar e abrir workflows de análise. O modelo principal de negócio inclui `Analysis`, `Dataset`, `Operation`, `OperationGraph` e artefatos renderizados.
+A API expõe rotas de autenticação e análises, enquanto o frontend consome esses endpoints para criar, listar e abrir workflows de análise. As definições continuam trafegando como operações e arestas para manter compatibilidade com análises persistidas; `dataflow_execution` converte essa definição em unidades e conexões Hyperway antes da execução. O modelo principal inclui `Analysis`, `Dataset`, `Operation` e artefatos renderizados.
 
 ## Contribuição
 

@@ -1,8 +1,7 @@
-from pydantic import BaseModel, ConfigDict
+from typing import Any
 from uuid import UUID
-from typing import Optional, Any
 
-from dataflow_domain import Operation, Dataset, Analysis
+from dataflow_domain import Analysis, Dataset, Operation
 from dataflow_domain.chart import ChartSpec, ChartType
 from dataflow_domain.operations import (
     ConcatOperation,
@@ -11,6 +10,7 @@ from dataflow_domain.operations import (
     GroupByOperation,
     SortOperation,
 )
+from pydantic import BaseModel, ConfigDict
 
 
 class ChartRequest(BaseModel):
@@ -19,7 +19,7 @@ class ChartRequest(BaseModel):
     type:   str
     x:      str
     y:      str
-    title:  Optional[str] = None
+    title:  str | None = None
 
     def to_domain(self) -> ChartSpec:
         """Converte a requisição em uma especificação de gráfico do domínio."""

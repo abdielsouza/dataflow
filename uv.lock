@@ -333,6 +333,7 @@ source = { editable = "packages/execution" }
 dependencies = [
     { name = "dataflow-analytics" },
     { name = "dataflow-domain" },
+    { name = "hyperway" },
     { name = "polars", extra = ["rtcompat"] },
 ]
 
@@ -340,6 +341,7 @@ dependencies = [
 requires-dist = [
     { name = "dataflow-analytics", editable = "packages/analytics" },
     { name = "dataflow-domain", editable = "packages/domain" },
+    { name = "hyperway" },
     { name = "polars", extras = ["rtcompat"], specifier = ">=1.33" },
 ]
 
@@ -423,6 +425,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b1/df/48c586a5fe32a0f01324ee087459e112ebb7224f646c0b5023f5e79e9956/httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc", size = 141406, upload-time = "2024-12-06T15:37:23.222Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad", size = 73517, upload-time = "2024-12-06T15:37:21.509Z" },
+]
+
+[[package]]
+name = "hyperway"
+version = "1.0.9"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/59/b4/c3f7d2fed4c67d712470b25b34932bfb3f5f15a047f0f29763a0b91fcaf2/hyperway-1.0.9.tar.gz", hash = "sha256:6ec8a5e5185bf280d69f34dd051c175ff2f3b04fbc83dab04fa9b015fda07f2e", size = 97765, upload-time = "2025-11-12T02:27:20.981Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/65/9631b19cf1046868093c68d88a2a7682342c251491b721a694580ea49e34/hyperway-1.0.9-py3-none-any.whl", hash = "sha256:805a3cfed3590e3f29ff17b36ae38d312fa6b4c3cb649a1b80338627805d600e", size = 34977, upload-time = "2025-11-12T02:27:19.854Z" },
 ]
 
 [[package]]
