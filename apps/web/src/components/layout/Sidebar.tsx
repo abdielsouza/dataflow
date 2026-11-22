@@ -8,10 +8,12 @@ import {
   Settings,
   Workflow,
 } from "lucide-react";
+import type { UserResponse } from "../../lib/api";
 
 interface SidebarProps {
   activeItem: string;
   onNavigate: (item: string) => void;
+  user: UserResponse | null;
 }
 
 const navigation = [
@@ -32,8 +34,15 @@ const navigation = [
   },
 ];
 
-export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
+export function Sidebar({ activeItem, onNavigate, user }: SidebarProps) {
   // Navegação lateral principal: regiões de trabalho, monitoramento e ajustes.
+  const initials = user?.username
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "DF";
+
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-[#111318] text-slate-300">
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
@@ -115,15 +124,15 @@ export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
 
         <div className="mt-3 flex items-center gap-3 rounded-lg p-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-violet-500 text-xs font-bold text-white">
-            DF
+              {initials}
           </div>
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-white">
-              Dataflow User
+              {user?.username ?? "Carregando conta..."}
             </p>
             <p className="truncate text-xs text-slate-500">
-              Personal account
+              {user?.email ?? " "}
             </p>
           </div>
         </div>

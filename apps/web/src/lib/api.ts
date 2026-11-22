@@ -15,6 +15,18 @@ export interface RegisterRequest {
   password: string;
 }
 
+export interface UserResponse {
+  id: string;
+  username: string;
+  email: string;
+}
+
+export interface UpdateUserRequest {
+  username?: string;
+  email?: string;
+  password?: string;
+}
+
 export interface TokenResponse {
   access_token:  string;
   token_type:    string;
@@ -124,7 +136,11 @@ export async function apiRequest<T>(
   });
 
   if (response.status === 401) {
+    const hadToken = Boolean(token);
     clearAccessToken();
+    if (hadToken && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("dataflow:unauthorized"));
+    }
   }
 
   if (!response.ok) {
@@ -147,13 +163,10 @@ export async function apiRequest<T>(
 
 export const api = {
   register(data: RegisterRequest) {
-    return apiRequest<{id: string; username: string; email: string}>(
-      "/auth/register",
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      },
-    );
+    return apiRequest<UserResponse>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 
   async login(data: LoginRequest) {
@@ -172,6 +185,21 @@ export const api = {
 
   logout() {
     clearAccessToken();
+  },
+
+  getCurrentUser() {
+    return apiRequest<UserResponse>("/users/me");
+  },
+
+  updateCurrentUser(data: UpdateUserRequest) {
+    return apiRequest<UserResponse>("/users/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteCurrentUser() {
+    return apiRequest<void>("/users/me", { method: "DELETE" });
   },
 
   listAnalyses() {

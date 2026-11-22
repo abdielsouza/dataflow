@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   ArrowRight,
@@ -28,6 +29,8 @@ import {
 } from "../features/analyses/analysisQueries";
 import { clearAccessToken, getAccessToken, type AnalysisListItem } from "../lib/api";
 import { LoginForm } from "../features/auth/LoginForm";
+import { UserSettingsPage } from "../features/users/UserSettingsPage";
+import { useCurrentUser } from "../features/users/userQueries";
 
 const statusConfig: Record<
   AnalysisStatus,
@@ -64,6 +67,7 @@ function mapRemoteAnalysis(item: AnalysisListItem): Analysis {
 
 export default function App() {
   // --- Estado de autenticação e sessão da UI ---
+  const queryClient = useQueryClient();
   const [activeItem, setActiveItem] = useState("Overview");
   const [search, setSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -71,6 +75,7 @@ export default function App() {
   const [openedAnalysis, setOpenedAnalysis] = useState<Analysis | null>(null);
   const [authenticated, setAuthenticated] = useState(() => Boolean(getAccessToken()));
 
+  const currentUserQuery = useCurrentUser(authenticated);
   const { data: analysesFromApi = [], isLoading, isError, error } = useAnalyses(authenticated);
   const createAnalysisMutation = useCreateAnalysis();
   const { data: openedAnalysisDetail, isLoading: isOpenedAnalysisLoading, error: openedAnalysisError } =
@@ -79,11 +84,24 @@ export default function App() {
   const analyses = analysesFromApi.map(mapRemoteAnalysis);
 
   useEffect(() => {
-    const syncAuthState = () => setAuthenticated(Boolean(getAccessToken()));
+    const syncAuthState = () => {
+      const hasToken = Boolean(getAccessToken());
+      if (!hasToken) queryClient.clear();
+      setAuthenticated(hasToken);
+    };
+    const handleUnauthorized = () => {
+      queryClient.clear();
+      setAuthenticated(false);
+      setOpenedAnalysis(null);
+    };
 
     window.addEventListener("storage", syncAuthState);
-    return () => window.removeEventListener("storage", syncAuthState);
-  }, []);
+    window.addEventListener("dataflow:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("storage", syncAuthState);
+      window.removeEventListener("dataflow:unauthorized", handleUnauthorized);
+    };
+  }, [queryClient]);
 
   const filteredAnalyses = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -132,12 +150,18 @@ export default function App() {
 
   function handleLogout() {
     clearAccessToken();
+    queryClient.clear();
     setAuthenticated(false);
     setOpenedAnalysis(null);
   }
 
+  function handleLoginSuccess() {
+    setAuthenticated(true);
+    void queryClient.invalidateQueries();
+  }
+
   if (!authenticated) {
-    return <LoginForm onSuccess={() => setAuthenticated(true)} />;
+    return <LoginForm onSuccess={handleLoginSuccess} />;
   }
 
   // --- Editor de análise em tela cheia ---
@@ -180,7 +204,11 @@ export default function App() {
 
   return (
     <div className="flex h-screen min-w-0 overflow-hidden bg-[#f7f8fa] text-slate-900">
-      <Sidebar activeItem={activeItem} onNavigate={setActiveItem} />
+      <Sidebar
+        activeItem={activeItem}
+        onNavigate={setActiveItem}
+        user={currentUserQuery.data ?? null}
+      />
 
       {/* Layout principal do workspace: cabeçalho, conteúdo e ações globais. */}
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -407,6 +435,13 @@ export default function App() {
                   </div>
                 </section>
               </>
+            ) : activeItem === "Settings" ? (
+              <UserSettingsPage
+                user={currentUserQuery.data ?? null}
+                isLoading={currentUserQuery.isLoading}
+                error={currentUserQuery.error instanceof Error ? currentUserQuery.error.message : null}
+                onAccountDeleted={handleLogout}
+              />
             ) : (
               <section className="flex min-h-[60vh] flex-col items-center justify-center text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm">

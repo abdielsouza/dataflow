@@ -48,6 +48,39 @@ describe("LoginForm API integration", () => {
     expect(onSuccess).toHaveBeenCalledOnce();
   });
 
+  it("registers an account and returns to the login form", async () => {
+    const user = userEvent.setup();
+    const onSuccess = vi.fn();
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({ id: "user-1", username: "person", email: "person@example.com" }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    render(<LoginForm onSuccess={onSuccess} />);
+    await user.click(screen.getByRole("button", { name: "Cadastre-se" }));
+    await user.type(screen.getByLabelText("Nome de usuário"), "person");
+    await user.type(screen.getByLabelText("E-mail"), "person@example.com");
+    await user.type(screen.getByLabelText("Senha"), "correct-horse-battery");
+    await user.click(screen.getByRole("button", { name: "Criar conta" }));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:8000/auth/register",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          username: "person",
+          email: "person@example.com",
+          password: "correct-horse-battery",
+        }),
+      }),
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent("Conta criada");
+    expect(screen.getByRole("heading", { name: "Entrar na sua conta" })).toBeInTheDocument();
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
   it("shows the API error and clears an expired token on unauthorized response", async () => {
     const user = userEvent.setup();
     const onSuccess = vi.fn();
