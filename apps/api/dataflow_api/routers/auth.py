@@ -13,6 +13,8 @@ from .base import AbstractRouter
 
 
 class AuthRouter(AbstractRouter):
+    """The authentication routing logic"""
+
     prefix = "/auth"
     tags = ("auth",)
 
@@ -36,11 +38,14 @@ class AuthRouter(AbstractRouter):
         request: RegisterRequest,
         service: AuthService = Depends(get_auth_service),
     ) -> UserResponse:
-        user = service.register(
-            username=request.username,
-            email=request.email,
-            password=request.password,
-        )
+        try:
+            user = service.register(
+                username=request.username,
+                email=request.email,
+                password=request.password,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         return UserResponse.from_domain(user)
 

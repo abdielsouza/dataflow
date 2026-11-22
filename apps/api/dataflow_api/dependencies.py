@@ -51,6 +51,13 @@ def get_auth_service() -> AuthService:
     )
 
 
+def get_user_service() -> UserService:
+    return UserService(
+        repo=get_user_repository(),
+        password_handler=get_password_handler(),
+    )
+
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
     token_handler: TokenHandler = Depends(get_token_handler),

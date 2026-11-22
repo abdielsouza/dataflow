@@ -15,6 +15,10 @@ from .auth import (
     UserResponse,
 )
 from .execution import ExecutionRequest, ExecutionResponse
+from .user import (
+    UpdateUserRequest,
+    UpdateUserResponse,
+)
 
 __all__ = [
     "AnalysisListItem",
@@ -31,4 +35,6 @@ __all__ = [
     "SavedDatasetResponse",
     "TokenResponse",
     "UserResponse",
+    "UpdateUserRequest",
+    "UpdateUserResponse",
 ]

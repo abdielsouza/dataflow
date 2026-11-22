@@ -35,6 +35,7 @@ def create_app() -> FastAPI:
 
     routers = (
         AuthRouter(),
+        UserRouter(),
         ExecutionRouter(),
         AnalysisRouter(),
         DatasetRouter(),

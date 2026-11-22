@@ -81,3 +81,47 @@ class TursoUserRepository:
             connection.commit()
         finally:
             connection.close()
+
+    def delete(self, user_id: UUID) -> None:
+        connection = connect_database()
+
+        try:
+            connection.execute(
+                """
+                DELETE FROM users WHERE id = ?
+                """,
+                (
+                    str(user_id),
+                )
+            )
+            connection.commit()
+        finally:
+            connection.close()
+
+    def update(self, user: User) -> None:
+        connection = connect_database()
+
+        try:
+            existing = connection.execute(
+                "SELECT id FROM users WHERE email = ? AND id != ?",
+                (user.email.strip().casefold(), str(user.id)),
+            ).fetchone()
+            if existing is not None:
+                raise ValueError("User with this email already exists.")
+
+            connection.execute(
+                """
+                UPDATE users
+                SET username = ?, email = ?, password = ?
+                WHERE id = ?
+                """,
+                (
+                    user.username,
+                    user.email.strip().casefold(),
+                    user.password,
+                    str(user.id),
+                ),
+            )
+            connection.commit()
+        finally:
+            connection.close()

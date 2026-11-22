@@ -24,3 +24,23 @@ class InMemoryUserRepository:
 
         self._users_by_id[user.id] = user
         self._user_ids_by_email[user.email] = user.id
+
+    def update(self, user: User) -> None:
+        existing = self._users_by_id.get(user.id)
+        if existing is not None:
+            old_email = existing.email
+            if old_email != user.email:
+                self._user_ids_by_email.pop(old_email, None)
+
+        existing_id = self._user_ids_by_email.get(user.email)
+        if existing_id is not None and existing_id != user.id:
+            raise ValueError("User with this email already exists.")
+
+        self._users_by_id[user.id] = user
+        self._user_ids_by_email[user.email] = user.id
+
+    def delete(self, user_id: UUID) -> None:
+        user = self._users_by_id.pop(user_id, None)
+        if user is not None:
+            if self._user_ids_by_email.get(user.email) == user_id:
+                self._user_ids_by_email.pop(user.email, None)

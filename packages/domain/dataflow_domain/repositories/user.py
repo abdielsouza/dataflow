@@ -13,3 +13,9 @@ class UserRepository(Protocol):
 
     def save(self, user: User) -> None:
         ...
+
+    def delete(self, user_id: UUID) -> None:
+        ...
+
+    def update(self, user: User) -> None:
+        ...
